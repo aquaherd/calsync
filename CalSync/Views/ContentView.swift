@@ -21,6 +21,17 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
             model.refreshCalendars()
         }
+        .alert(
+            "CalSync Storage",
+            isPresented: Binding(
+                get: { model.storageError != nil },
+                set: { if !$0 { model.dismissStorageError() } }
+            )
+        ) {
+            Button("OK") { model.dismissStorageError() }
+        } message: {
+            Text(model.storageError ?? "")
+        }
     }
 }
 

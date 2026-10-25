@@ -18,6 +18,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Xcode's IPA packaging step calls /usr/bin/rsync, which starts its server side
+# through PATH. A GNU rsync from MacPorts/Homebrew in PATH rejects the -E flag
+# ("--extended-attributes: unknown option") and makes exportArchive fail with
+# "Copy failed". Keep Apple's tools first so the server resolves to openrsync.
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
+
 BUILD_NUMBER="${BUILD_NUMBER:-$(date -u +%y%m%d%H%M)}"
 ARCHIVE_PATH="build/CalSync.xcarchive"
 EXPORT_PATH="build/export"

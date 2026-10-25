@@ -6,13 +6,22 @@ enum SyncError: LocalizedError {
     case destinationMissing
     case destinationReadOnly
     case sameCalendar
+    case massDeletion(Int)
 
     var errorDescription: String? {
         switch self {
-        case .sourceMissing: "Source calendar not found."
-        case .destinationMissing: "Destination calendar not found."
-        case .destinationReadOnly: "Destination calendar is read-only."
-        case .sameCalendar: "Source and destination must differ."
+        case .sourceMissing: String(localized: "Source calendar not found.")
+        case .destinationMissing: String(localized: "Destination calendar not found.")
+        case .destinationReadOnly: String(localized: "Destination calendar is read-only.")
+        case .sameCalendar: String(localized: "Source and destination must differ.")
+        case .massDeletion(let count):
+            String.localizedStringWithFormat(
+                NSLocalizedString(
+                    "Stopped before removing copied events (%lld) because the source calendar looks empty or much smaller. Check the source account, then confirm the removal.",
+                    comment: ""
+                ),
+                count
+            )
         }
     }
 }
@@ -22,7 +31,9 @@ struct SyncEngine {
     let store: EKEventStore
     let mappings: MappingStore
 
-    func run(_ job: SyncJob, now: Date = .now) throws -> SyncResult {
+    /// - Parameter allowMassDeletion: Set only after the user confirmed that a very large removal
+    ///   is intended. Background runs never set it.
+    func run(_ job: SyncJob, now: Date = .now, allowMassDeletion: Bool = false) throws -> SyncResult {
         guard job.sourceCalendarID != job.destinationCalendarID else { throw SyncError.sameCalendar }
         guard let source = store.calendar(withIdentifier: job.sourceCalendarID) else { throw SyncError.sourceMissing }
         guard let destination = store.calendar(withIdentifier: job.destinationCalendarID) else { throw SyncError.destinationMissing }
@@ -41,15 +52,22 @@ struct SyncEngine {
             guard let id = event.eventIdentifier else { return nil }
             return DestinationEvent(id: id, payload: payload(from: event))
         }
+        let claimedElsewhere = mappings.claimedDestinationIDs(excluding: job.id)
 
         let plan = SyncPlanner.plan(
             source: occurrences,
             mapping: mapping,
             existingDestinationIDs: existingIDs,
+            claimedDestinationIDs: claimedElsewhere,
             destinationEvents: destinationEvents,
             window: window,
             deleteRemoved: job.options.deleteRemoved
         )
+
+        if !allowMassDeletion,
+           let blocked = SyncPlanner.blockedDeletionCount(in: plan, sourceCount: occurrences.count) {
+            throw SyncError.massDeletion(blocked)
+        }
 
         var result = SyncResult(date: now, unchanged: plan.unchanged)
         var created: [(key: String, event: EKEvent, payload: EventPayload)] = []
@@ -66,7 +84,11 @@ struct SyncEngine {
                     try store.save(event, span: .thisEvent, commit: false)
                     created.append((occurrence.key, event, occurrence.payload))
                 case .update(let id, let occurrence):
-                    guard let event = store.event(withIdentifier: id) else { result.failed += 1; continue }
+                    guard let event = store.event(withIdentifier: id) else {
+                        result.failed += 1
+                        appendFailure(String(localized: "A copied event could not be found and will be recreated."), to: &result)
+                        continue
+                    }
                     apply(occurrence.payload, to: event)
                     try store.save(event, span: .thisEvent, commit: false)
                     mapping[occurrence.key] = MappingEntry(destinationID: id, payload: occurrence.payload)
@@ -80,13 +102,18 @@ struct SyncEngine {
                 }
             } catch {
                 result.failed += 1
+                appendFailure(error.localizedDescription, to: &result)
             }
         }
 
         try store.commit()
 
         for item in created {
-            guard let id = item.event.eventIdentifier else { result.failed += 1; continue }
+            guard let id = item.event.eventIdentifier else {
+                result.failed += 1
+                appendFailure(String(localized: "A copied event could not be saved."), to: &result)
+                continue
+            }
             mapping[item.key] = MappingEntry(destinationID: id, payload: item.payload)
             result.created += 1
         }
@@ -100,7 +127,8 @@ struct SyncEngine {
         let mapping = try mappings.load(for: job.id)
         var removed = 0
         for entry in mapping.values {
-            guard let event = store.event(withIdentifier: entry.destinationID) else { continue }
+            guard let event = store.event(withIdentifier: entry.destinationID),
+                  event.calendar?.calendarIdentifier == job.destinationCalendarID else { continue }
             try store.remove(event, span: .thisEvent, commit: false)
             removed += 1
         }
@@ -135,6 +163,7 @@ struct SyncEngine {
             if !options.copyURL { payload.url = nil }
         }
         if !options.copyAlarms { payload.alarmOffsets = [] }
+        payload = OrgOnlyLinkFilter.strip(from: payload, copyURL: options.copyURL)
 
         let itemID = event.calendarItemExternalIdentifier ?? event.calendarItemIdentifier
         let occurrenceDate: Date = event.occurrenceDate ?? event.startDate
@@ -165,5 +194,10 @@ struct SyncEngine {
         event.notes = payload.notes
         event.url = payload.url
         event.alarms = payload.alarmOffsets.isEmpty ? nil : payload.alarmOffsets.map { EKAlarm(relativeOffset: $0) }
+    }
+
+    private func appendFailure(_ message: String, to result: inout SyncResult) {
+        guard result.failures.count < 5 else { return }
+        result.failures.append(message)
     }
 }

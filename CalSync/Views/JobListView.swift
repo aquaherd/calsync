@@ -50,6 +50,32 @@ struct JobListView: View {
         .sheet(item: $editorJob) { job in
             JobEditorView(job: job, isNew: !model.jobs.contains { $0.id == job.id })
         }
+        .alert(
+            "Large Removal Stopped",
+            isPresented: Binding(
+                get: { model.pendingMassDeletion != nil },
+                set: { _ in }
+            ),
+            presenting: model.pendingMassDeletion
+        ) { request in
+            Button("Remove Anyway", role: .destructive) {
+                Task { await model.confirmMassDeletion() }
+            }
+            Button("Cancel", role: .cancel) {
+                model.cancelMassDeletion()
+            }
+        } message: { request in
+            Text(
+                String.localizedStringWithFormat(
+                    NSLocalizedString(
+                        "“%@” would remove copied events (%lld) because the source calendar looks empty or much smaller. Check the source account first.",
+                        comment: ""
+                    ),
+                    model.jobDescription(for: request.jobID),
+                    request.count
+                )
+            )
+        }
     }
 }
 
@@ -83,7 +109,7 @@ private struct JobRow: View {
 
     @ViewBuilder private var status: some View {
         if let result = job.lastResult {
-            Text("\(result.date, format: .relative(presentation: .named)) · \(result.summary)")
+            Text(verbatim: result.date.formatted(.relative(presentation: .named)) + " · " + result.summary)
         } else {
             Text("Not synced yet")
         }

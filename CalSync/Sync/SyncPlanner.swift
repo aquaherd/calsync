@@ -11,6 +11,13 @@ nonisolated struct SyncPlan: Hashable, Sendable {
     /// Mapping keys to drop without touching the destination calendar.
     var forget: [String] = []
     var unchanged = 0
+
+    var deletionCount: Int {
+        actions.reduce(0) { count, action in
+            if case .delete = action { return count + 1 }
+            return count
+        }
+    }
 }
 
 /// Decides what to do for one sync run. Pure and EventKit-free so it can be unit tested.
@@ -33,12 +40,15 @@ nonisolated enum SyncPlanner {
     ///   - source: Occurrences currently in the source calendar within `window`.
     ///   - mapping: Copies made by earlier runs, keyed by occurrence key.
     ///   - existingDestinationIDs: Mapped destination IDs that still exist in the destination calendar.
+    ///   - claimedDestinationIDs: Destination IDs that belong to another job. They are never
+    ///     adopted, so two jobs cannot take over and fight over the same copy.
     ///   - destinationEvents: Events currently in the destination calendar within `window`; used to
     ///     re-link identical events instead of creating duplicates (e.g. after a reinstall).
     static func plan(
         source: [SourceOccurrence],
         mapping: [String: MappingEntry],
         existingDestinationIDs: Set<String>,
+        claimedDestinationIDs: Set<String> = [],
         destinationEvents: [DestinationEvent],
         window: DateInterval,
         deleteRemoved: Bool
@@ -46,9 +56,10 @@ nonisolated enum SyncPlanner {
         var plan = SyncPlan()
 
         let claimed = Set(mapping.values.map(\.destinationID)).intersection(existingDestinationIDs)
-        var adoptable: [MatchKey: [String]] = [:]
-        for event in destinationEvents where !claimed.contains(event.id) {
-            adoptable[MatchKey(event.payload), default: []].append(event.id)
+        var adoptable: [MatchKey: [DestinationEvent]] = [:]
+        for event in destinationEvents
+        where !claimed.contains(event.id) && !claimedDestinationIDs.contains(event.id) {
+            adoptable[MatchKey(event.payload), default: []].append(event)
         }
 
         var seen = Set<String>()
@@ -56,23 +67,23 @@ nonisolated enum SyncPlanner {
             guard seen.insert(occurrence.key).inserted else { continue }
 
             if let entry = mapping[occurrence.key], existingDestinationIDs.contains(entry.destinationID) {
-                if entry.payload == occurrence.payload {
+                if entry.fingerprint == occurrence.payload.fingerprint {
                     plan.unchanged += 1
                 } else {
                     plan.actions.append(.update(destinationID: entry.destinationID, occurrence))
                 }
-            } else if let id = adoptable[MatchKey(occurrence.payload)]?.popLast() {
-                plan.actions.append(.update(destinationID: id, occurrence))
+            } else if let matched = takeAdoptable(matching: occurrence.payload, from: &adoptable) {
+                plan.actions.append(.update(destinationID: matched.id, occurrence))
             } else {
                 plan.actions.append(.create(occurrence))
             }
         }
 
         for (key, entry) in mapping.sorted(by: { $0.key < $1.key }) where !seen.contains(key) {
-            if entry.payload.endDate <= window.start {
+            if entry.endDate <= window.start {
                 // Scrolled out of the past edge of the window: keep the copy, stop tracking it.
                 plan.forget.append(key)
-            } else if !entry.payload.overlaps(window) {
+            } else if entry.startDate >= window.end {
                 // Beyond the window (e.g. the range was shortened): keep tracking for later runs.
                 continue
             } else if deleteRemoved && existingDestinationIDs.contains(entry.destinationID) {
@@ -83,5 +94,43 @@ nonisolated enum SyncPlanner {
         }
 
         return plan
+    }
+
+    /// Re-links only events that match in every copied field. Title and time alone are too weak:
+    /// a personal event with the same name and slot must not be taken over and later deleted.
+    private static func takeAdoptable(
+        matching payload: EventPayload,
+        from adoptable: inout [MatchKey: [DestinationEvent]]
+    ) -> DestinationEvent? {
+        let key = MatchKey(payload)
+        guard var candidates = adoptable[key],
+              let index = candidates.lastIndex(where: { $0.payload == payload }) else {
+            return nil
+        }
+        let match = candidates.remove(at: index)
+        if candidates.isEmpty {
+            adoptable.removeValue(forKey: key)
+        } else {
+            adoptable[key] = candidates
+        }
+        return match
+    }
+
+    /// Returns the number of deletions when a run looks like a source-account outage rather than
+    /// a real cleanup, and the caller should stop and ask first.
+    ///
+    /// A source that still exists but returns no events is exactly what a temporarily unavailable
+    /// Exchange or iCloud account looks like. Deleting the whole mirror in that state is the most
+    /// damaging thing this app could do.
+    static func blockedDeletionCount(in plan: SyncPlan, sourceCount: Int) -> Int? {
+        let deletions = plan.deletionCount
+        guard deletions > 0 else { return nil }
+        if sourceCount == 0 { return deletions }
+        // A large removal is suspicious when more than half of the previously tracked events
+        // would disappear in one run.
+        if deletions * 2 > sourceCount + deletions {
+            return deletions
+        }
+        return nil
     }
 }

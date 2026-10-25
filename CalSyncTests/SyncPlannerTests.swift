@@ -15,11 +15,13 @@ struct SyncPlannerTests {
         source: [SourceOccurrence],
         mapping: [String: MappingEntry] = [:],
         existing: Set<String> = [],
+        claimed: Set<String> = [],
         destination: [DestinationEvent] = [],
         deleteRemoved: Bool = true
     ) -> SyncPlan {
         SyncPlanner.plan(source: source, mapping: mapping, existingDestinationIDs: existing,
-                         destinationEvents: destination, window: window, deleteRemoved: deleteRemoved)
+                         claimedDestinationIDs: claimed, destinationEvents: destination,
+                         window: window, deleteRemoved: deleteRemoved)
     }
 
     @Test func createsNewEvents() {
@@ -110,5 +112,78 @@ struct SyncPlannerTests {
         let today = calendar.startOfDay(for: now)
         #expect(window.start == today.addingTimeInterval(-7 * 86_400))
         #expect(window.end == today.addingTimeInterval(31 * 86_400))
+    }
+
+    // MARK: - Adoption safety
+
+    @Test func doesNotAdoptLookAlikeWithDifferentDetails() {
+        let sourcePayload = payload("Standup", day: 1)
+        var lookAlike = sourcePayload
+        lookAlike.notes = "My own note"
+        lookAlike.location = "My office"
+        let occurrence = SourceOccurrence(key: "a", payload: sourcePayload)
+        let result = plan(
+            source: [occurrence],
+            destination: [DestinationEvent(id: "personal", payload: lookAlike)]
+        )
+        #expect(result.actions == [.create(occurrence)])
+    }
+
+    @Test func doesNotAdoptCopyClaimedByAnotherJob() {
+        let occurrence = SourceOccurrence(key: "a", payload: payload("Standup", day: 1))
+        let result = plan(
+            source: [occurrence],
+            claimed: ["other-job-copy"],
+            destination: [DestinationEvent(id: "other-job-copy", payload: occurrence.payload)]
+        )
+        #expect(result.actions == [.create(occurrence)])
+    }
+
+    // MARK: - Mass deletion guard
+
+    @Test func blocksDeletionWhenSourceLooksEmpty() {
+        let gone = payload("Cancelled", day: 3)
+        let plan = plan(
+            source: [],
+            mapping: ["x": .init(destinationID: "d1", payload: gone)],
+            existing: ["d1"]
+        )
+        #expect(SyncPlanner.blockedDeletionCount(in: plan, sourceCount: 0) == 1)
+    }
+
+    @Test func allowsSmallCleanupWhileSourceStillHasEvents() {
+        let actions = (0..<3).map { index in
+            SyncAction.delete(destinationID: "d\(index)", key: "k\(index)")
+        }
+        let plan = SyncPlan(actions: actions)
+        #expect(SyncPlanner.blockedDeletionCount(in: plan, sourceCount: 20) == nil)
+    }
+
+    @Test func blocksRemovalOfMoreThanHalfTheTrackedEvents() {
+        let actions = (0..<12).map { index in
+            SyncAction.delete(destinationID: "d\(index)", key: "k\(index)")
+        }
+        let plan = SyncPlan(actions: actions)
+        #expect(SyncPlanner.blockedDeletionCount(in: plan, sourceCount: 10) == 12)
+    }
+
+    @Test func blocksAlmostEmptyingASmallCalendar() {
+        let actions = (0..<9).map { index in
+            SyncAction.delete(destinationID: "d\(index)", key: "k\(index)")
+        }
+        let plan = SyncPlan(actions: actions)
+        #expect(SyncPlanner.blockedDeletionCount(in: plan, sourceCount: 1) == 9)
+    }
+
+    @Test func allowsLargeCleanupInALargeCalendar() {
+        let actions = (0..<12).map { index in
+            SyncAction.delete(destinationID: "d\(index)", key: "k\(index)")
+        }
+        let plan = SyncPlan(actions: actions)
+        #expect(SyncPlanner.blockedDeletionCount(in: plan, sourceCount: 100) == nil)
+    }
+
+    @Test func allowsEmptyPlanWithoutDeletions() {
+        #expect(SyncPlanner.blockedDeletionCount(in: SyncPlan(), sourceCount: 0) == nil)
     }
 }

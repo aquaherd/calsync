@@ -7,15 +7,23 @@ struct JobEditorView: View {
     @State private var job: SyncJob
     @State private var confirmRemoveCopies = false
     @State private var confirmDelete = false
+    @State private var confirmCalendarChange = false
     @State private var message: String?
     private let isNew: Bool
+    private let original: SyncJob
 
     private static let pastChoices = [0, 1, 7, 14, 30, 90, 365]
     private static let aheadChoices = [7, 14, 30, 60, 90, 180, 365]
 
     init(job: SyncJob, isNew: Bool) {
         _job = State(initialValue: job)
+        original = job
         self.isNew = isNew
+    }
+
+    private var calendarsChanged: Bool {
+        original.sourceCalendarID != job.sourceCalendarID
+            || original.destinationCalendarID != job.destinationCalendarID
     }
 
     var body: some View {
@@ -25,6 +33,7 @@ struct JobEditorView: View {
                 rangeSection
                 detailsSection
                 behaviorSection
+                if let result = job.lastResult { lastSyncSection(result) }
                 if !isNew { dangerSection }
             }
             .navigationTitle(isNew ? "New Sync" : "Edit Sync")
@@ -34,17 +43,23 @@ struct JobEditorView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        model.save(job)
-                        let id = job.id
-                        dismiss()
-                        Task { await model.sync(id) }
-                    }
-                    .disabled(!job.isValid)
+                    Button("Save") { requestSave() }
+                        .disabled(!job.isValid)
                 }
             }
             .onChange(of: job.sourceCalendarID) { _, newValue in
                 if job.destinationCalendarID == newValue { job.destinationCalendarID = "" }
+            }
+            .confirmationDialog(
+                "Calendars changed",
+                isPresented: $confirmCalendarChange,
+                titleVisibility: .visible
+            ) {
+                Button("Remove Old Copies", role: .destructive) { save(removeOldCopies: true) }
+                Button("Keep Old Copies") { save(removeOldCopies: false) }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Copies already in the old calendar stay unless you remove them. CalSync can no longer manage them afterwards.")
             }
             .alert("CalSync", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
                 Button("OK") {}
@@ -109,7 +124,11 @@ struct JobEditorView: View {
         } header: {
             Text("Details")
         } footer: {
-            Text("Private mode copies only the time slot, using the title above.")
+            if job.options.privateMode {
+                Text("Private mode copies only the time slot, using the title above.")
+            } else if !job.options.copyURL {
+                Text("When Copy URL is off, Teams join links and their join boilerplate are removed from notes and location too.")
+            }
         }
     }
 
@@ -122,7 +141,20 @@ struct JobEditorView: View {
         } header: {
             Text("Behavior")
         } footer: {
-            Text("Enabled syncs run when the app opens and periodically in the background.")
+            Text("Enabled syncs run when the app opens and periodically in the background. A very large removal is stopped until you confirm it.")
+        }
+    }
+
+    private func lastSyncSection(_ result: SyncResult) -> some View {
+        Section("Last Sync") {
+            Text(result.summary)
+            if !result.failures.isEmpty {
+                ForEach(Array(result.failures.enumerated()), id: \.offset) { _, failure in
+                    Text(failure)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 
@@ -133,7 +165,8 @@ struct JobEditorView: View {
                     Button("Remove Copied Events", role: .destructive) {
                         do {
                             let count = try model.removeCopies(of: job.id)
-                            message = "Removed \(count) events."
+                            message = String.localizedStringWithFormat(
+                                NSLocalizedString("Removed %lld events.", comment: ""), count)
                         } catch {
                             message = error.localizedDescription
                         }
@@ -149,12 +182,31 @@ struct JobEditorView: View {
         }
     }
 
+    private func requestSave() {
+        if !isNew && calendarsChanged {
+            confirmCalendarChange = true
+        } else {
+            save(removeOldCopies: false)
+        }
+    }
+
+    private func save(removeOldCopies: Bool) {
+        do {
+            try model.save(job, removeOldCopies: removeOldCopies)
+            let id = job.id
+            dismiss()
+            Task { await model.sync(id) }
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
     private func dayLabel(_ days: Int) -> String {
         switch days {
-        case 0: "None"
-        case 1: "1 day"
-        case 365: "1 year"
-        default: "\(days) days"
+        case 0: String(localized: "None")
+        case 1: String(localized: "1 day")
+        case 365: String(localized: "1 year")
+        default: String(localized: "\(days) days")
         }
     }
 }

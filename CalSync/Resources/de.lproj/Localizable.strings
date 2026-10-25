@@ -1,0 +1,85 @@
+/* German localization for CalSync. Keys are the English source strings. */
+
+/* Calendar access */
+"Calendar Access" = "Kalenderzugriff";
+"CalSync needs full access to your calendars to read events from one calendar and copy them to another." = "CalSync benötigt vollen Zugriff auf die Kalender, um Termine aus einem Kalender zu lesen und in einen anderen zu kopieren.";
+"Allow Access" = "Zugriff erlauben";
+"No Calendar Access" = "Kein Kalenderzugriff";
+"Allow CalSync full access to calendars in Settings to copy events." = "CalSync benötigt in den Einstellungen vollen Zugriff auf Kalender, um Termine zu kopieren.";
+"Open Settings" = "Einstellungen öffnen";
+
+/* Job list */
+"Sync" = "Synchronisieren";
+"No Syncs" = "Keine Synchronisierungen";
+"Add a sync to copy events from one calendar, such as Outlook, to another, such as iCloud." = "Füge eine Synchronisierung hinzu, um Termine von einem Kalender, etwa Outlook, in einen anderen, etwa iCloud, zu kopieren.";
+"Add Sync" = "Synchronisierung hinzufügen";
+"Sync All" = "Alle synchronisieren";
+"Not synced yet" = "Noch nicht synchronisiert";
+"Missing calendar" = "Kalender fehlt";
+
+/* Job editor */
+"New Sync" = "Neue Synchronisierung";
+"Edit Sync" = "Synchronisierung bearbeiten";
+"Cancel" = "Abbrechen";
+"Save" = "Sichern";
+"From" = "Von";
+"To" = "Nach";
+"Choose…" = "Auswählen …";
+"Calendars" = "Kalender";
+"Outlook calendars appear here once your Outlook or Exchange account is added under Settings › Apps › Calendar › Calendar Accounts." = "Outlook-Kalender erscheinen hier, sobald das Outlook- oder Exchange-Konto unter Einstellungen › Apps › Kalender › Kalenderkonten hinzugefügt ist.";
+"Time Range" = "Zeitraum";
+"Past" = "Vergangenheit";
+"Ahead" = "Zukunft";
+"None" = "Keine";
+"1 day" = "1 Tag";
+"1 year" = "1 Jahr";
+"%lld days" = "%lld Tage";
+"Details" = "Details";
+"Private (Busy Only)" = "Privat (nur beschäftigt)";
+"Title" = "Titel";
+"Copy Location" = "Ort kopieren";
+"Copy Notes" = "Notizen kopieren";
+"Copy URL" = "URL kopieren";
+"Copy Alerts" = "Erinnerungen kopieren";
+"Private mode copies only the time slot, using the title above." = "Der private Modus kopiert nur den Zeitraum und verwendet den Titel oben.";
+"Behavior" = "Verhalten";
+"Skip Declined & Canceled" = "Abgelehnte und abgesagte Termine überspringen";
+"Skip All-Day Events" = "Ganztägige Termine überspringen";
+"Remove Deleted Events" = "Gelöschte Termine entfernen";
+"Enabled" = "Aktiviert";
+"Remove Copied Events" = "Kopierte Termine entfernen";
+"Remove all events this sync copied to the destination?" = "Alle Termine entfernen, die diese Synchronisierung in den Zielkalender kopiert hat?";
+"Delete Sync" = "Synchronisierung löschen";
+"Delete this sync? Copied events stay in the destination calendar." = "Diese Synchronisierung löschen? Kopierte Termine bleiben im Zielkalender.";
+"OK" = "OK";
+
+/* Status and errors */
+"Busy" = "Beschäftigt";
+"%lld added" = "%lld hinzugefügt";
+"%lld updated" = "%lld aktualisiert";
+"%lld removed" = "%lld entfernt";
+"%lld failed" = "%lld fehlgeschlagen";
+"Source calendar not found." = "Quellkalender nicht gefunden.";
+"Destination calendar not found." = "Zielkalender nicht gefunden.";
+"Destination calendar is read-only." = "Der Zielkalender ist schreibgeschützt.";
+"Source and destination must differ." = "Quelle und Ziel müssen unterschiedlich sein.";
+
+/* Safety and calendar changes */
+"Calendars changed" = "Kalender geändert";
+"Remove Old Copies" = "Alte Kopien entfernen";
+"Keep Old Copies" = "Alte Kopien behalten";
+"Copies already in the old calendar stay unless you remove them. CalSync can no longer manage them afterwards." = "Bereits in den alten Kalender kopierte Termine bleiben, sofern du sie nicht entfernst. CalSync kann sie danach nicht mehr verwalten.";
+"Large Removal Stopped" = "Großes Entfernen gestoppt";
+"Remove Anyway" = "Trotzdem entfernen";
+"“%@” would remove copied events (%lld) because the source calendar looks empty or much smaller. Check the source account first." = "„%@“ würde kopierte Termine entfernen (%lld), weil der Quellkalender leer oder deutlich kleiner aussieht. Prüfe zuerst das Quellkonto.";
+"Stopped before removing copied events (%lld) because the source calendar looks empty or much smaller. Check the source account, then confirm the removal." = "Vor dem Entfernen kopierter Termine gestoppt (%lld), weil der Quellkalender leer oder deutlich kleiner aussieht. Prüfe das Quellkonto und bestätige dann das Entfernen.";
+"CalSync Storage" = "CalSync-Speicher";
+"Could not read the saved syncs. The previous file was kept as %@." = "Die gesicherten Synchronisierungen konnten nicht gelesen werden. Die vorherige Datei wurde als %@ behalten.";
+"CalSync could not save its syncs. Check that the device has free storage." = "CalSync konnte die Synchronisierungen nicht sichern. Prüfe, ob auf dem Gerät genügend Speicher frei ist.";
+"A copied event could not be found and will be recreated." = "Eine Kopie wurde nicht gefunden und wird neu erstellt.";
+"A copied event could not be saved." = "Eine Kopie konnte nicht gesichert werden.";
+"Last Sync" = "Letzte Synchronisierung";
+"Enabled syncs run when the app opens and periodically in the background. A very large removal is stopped until you confirm it." = "Aktivierte Synchronisierungen laufen beim Öffnen der App und regelmäßig im Hintergrund. Sehr große Löschvorgänge werden gestoppt, bis du sie bestätigst.";
+
+/* Teams links */
+"When Copy URL is off, Teams join links and their join boilerplate are removed from notes and location too." = "Wenn „URL kopieren“ aus ist, werden Teams-Beitrittslinks und die zugehörigen Beitrittstexte auch aus Notizen und Ort entfernt.";

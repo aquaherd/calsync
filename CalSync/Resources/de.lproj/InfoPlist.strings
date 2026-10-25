@@ -1,0 +1,2 @@
+/* German Info.plist strings. */
+"NSCalendarsFullAccessUsageDescription" = "CalSync liest Termine aus dem gewählten Quellkalender und schreibt Kopien in den Zielkalender.";

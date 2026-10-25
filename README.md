@@ -6,11 +6,24 @@ CalSync is a small iPhone app that copies events from one calendar to another, f
 
 - **Multiple syncs.** Each one copies a source calendar to a writable destination calendar.
 - **Updates stay in step.** Re-running a sync updates changed events and removes copies of deleted events. Each occurrence of a recurring event is copied as its own event.
-- **No duplicates.** CalSync records which source event each copy came from. If those records are lost (for example after a reinstall), it re-links identical events that are already in the destination.
+- **No duplicates, no hijacking.** CalSync records which source event each copy came from. If those records are lost (for example after a reinstall), it re-links only events that match in every copied field, and never takes over a copy that belongs to another sync.
+- **Large removals wait for you.** If a source account is offline or returns no events, the run stops before deleting the mirror. A foreground confirmation is required, so an unattended background run cannot wipe the destination.
+- **Calendar changes are handled.** Re-pointing a sync offers to remove the old copies; calendars from an account that was removed and added again are reconnected by title.
 - **Private mode.** Copies only the time slot, with a custom title such as "Busy".
 - **Options.** Choose whether to copy location, notes, URL and alerts. You can skip declined, canceled or all-day events.
+- **Teams links stay behind.** When "Copy URL" is off, Microsoft Teams join links and their join boilerplate are also removed from notes and location, because they only work inside the organization.
+- **Readable errors.** The editor shows what the last run did and lists individual failures instead of only a count.
 - **When it runs.** Syncs run when the app opens, on pull-to-refresh, and every so often in the background (`BGAppRefreshTask`).
 - **Undo.** "Remove Copied Events" deletes every event a sync has created.
+
+Mappings on disk contain only the destination identifier, the copied time range and a fingerprint of the copied fields. Notes, locations and URLs are not stored a second time.
+
+## Safety behavior
+
+- A run that would remove more than half of the tracked events, or any events while the source returns none, stops before changing anything and asks for confirmation. Background runs only record the error; the question appears the next time the app is open.
+- Re-linking after a reinstall requires an exact match in every copied field and ignores copies that belong to another sync. A look-alike personal event is never taken over.
+- Changing a sync's source or destination asks whether to remove the copies in the old calendar. If you keep them, CalSync no longer manages them.
+- If an account is removed and added again, its calendars get new identifiers. CalSync reconnects a sync by title and account when that match is unambiguous.
 
 ### Getting Outlook calendars onto the iPhone
 
@@ -19,15 +32,24 @@ CalSync works through iOS's calendar database (EventKit), so the Outlook calenda
 - add the account under **Settings › Apps › Calendar › Calendar Accounts › Add Account › Microsoft Exchange / Outlook.com**, or
 - in the Outlook iOS app, go to **Settings › your account › Sync Calendars** and turn it on.
 
+## Languages
+
+English is the development language. German translations live in `CalSync/Resources/de.lproj`:
+`Localizable.strings` for the UI, `Localizable.stringsdict` for plurals, and `InfoPlist.strings`
+for the calendar permission text. The English string literals in the SwiftUI views are the
+lookup keys, so a new UI string needs an entry in `de.lproj/Localizable.strings`.
+
 ## Project layout
 
 ```
 CalSync.xcodeproj           Xcode project (folders are file-system synchronized; just add files)
 CalSync/App                 App entry, background refresh, AppModel (state + persistence)
-CalSync/Sync                SyncPlanner (pure diff logic), SyncEngine (EventKit), MappingStore
+CalSync/Sync                SyncPlanner (pure diff logic), SyncEngine (EventKit), MappingStore,
+                            OrgOnlyLinkFilter (Teams link removal)
 CalSync/Models              SyncJob, EventPayload
 CalSync/Views               SwiftUI screens
-CalSyncTests                Swift Testing unit tests for the planner
+CalSync/Resources/de.lproj  German localization (UI, plurals, permission text)
+CalSyncTests                Swift Testing unit tests for the planner, link filter and persistence
 Config/Signing.xcconfig     Team ID + bundle ID
 Config/Info.plist           Background task IDs, export-compliance flag
 Config/ExportOptions.plist  App Store Connect upload options
@@ -77,6 +99,8 @@ export ASC_KEY_PATH=~/private_keys/AuthKey_XXXXXXXXXX.p8
 The build number defaults to a UTC timestamp, so it goes up with every upload. Set `MARKETING_VERSION=1.1` to bump the version users see. Set `EXPORT_ONLY=1` to write an `.ipa` to `build/export` instead of uploading.
 
 Once App Store Connect finishes processing the build, it appears in TestFlight. Internal testers can install it right away. External testers need a short Beta App Review first.
+
+The planned testers are `hakan@erduman.de` and `[redacted]`. See [docs/TestFlight.md](docs/TestFlight.md) for the German setup steps and a ready-to-paste "What to Test" text.
 
 ### Upload from GitHub Actions
 
