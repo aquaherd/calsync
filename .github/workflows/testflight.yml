@@ -1,0 +1,37 @@
+name: TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      marketing_version:
+        description: "Version shown to users (leave empty to keep the project value)"
+        required: false
+
+jobs:
+  upload:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run unit tests
+        run: |
+          xcodebuild test \
+            -project CalSync.xcodeproj -scheme CalSync \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Install App Store Connect API key
+        env:
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/keys/AuthKey.p8"
+
+      - name: Archive and upload to TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
+          APP_BUNDLE_ID: ${{ vars.APP_BUNDLE_ID }}
+          MARKETING_VERSION: ${{ inputs.marketing_version }}
+        run: ASC_KEY_PATH="$RUNNER_TEMP/keys/AuthKey.p8" ./scripts/testflight.sh

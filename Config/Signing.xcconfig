@@ -1,0 +1,8 @@
+// Signing and identity settings shared by all targets.
+// Team ID matches fhkf/batcounter (BatLog) and Kataster; bundle prefix follows Kataster.
+// Override locally in Config/Local.xcconfig (git-ignored).
+
+DEVELOPMENT_TEAM = UZZY9RR34A
+APP_BUNDLE_ID = de.erduman.calsync
+
+#include? "Local.xcconfig"
