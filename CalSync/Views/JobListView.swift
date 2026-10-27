@@ -28,7 +28,7 @@ struct JobListView: View {
                 ContentUnavailableView {
                     Label("No Syncs", systemImage: "calendar.badge.plus")
                 } description: {
-                    Text("Add a sync to copy events from one calendar, such as Outlook, to another, such as iCloud.")
+                    Text("Add a sync to copy events from one or more calendars, such as Outlook, to another, such as iCloud.")
                 } actions: {
                     Button("Add Sync") { editorJob = SyncJob() }
                         .buttonStyle(.borderedProminent)
@@ -51,7 +51,7 @@ struct JobListView: View {
             JobEditorView(job: job, isNew: !model.jobs.contains { $0.id == job.id })
         }
         .alert(
-            "Large Removal Stopped",
+            "Removal Stopped",
             isPresented: Binding(
                 get: { model.pendingMassDeletion != nil },
                 set: { _ in }
@@ -68,7 +68,7 @@ struct JobListView: View {
             Text(
                 String.localizedStringWithFormat(
                     NSLocalizedString(
-                        "“%@” would remove copied events (%lld) because the source calendar looks empty or much smaller. Check the source account first.",
+                        "“%@” would remove copied events (%lld) because a source calendar looks empty or much smaller. Check the source account first.",
                         comment: ""
                     ),
                     model.jobDescription(for: request.jobID),
@@ -86,9 +86,21 @@ private struct JobRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                CalendarLabel(calendar: model.calendar(withID: job.sourceCalendarID))
+                if job.sources.isEmpty {
+                    Text("No source")
+                } else {
+                    ForEach(job.sources) { source in
+                        CalendarLabel(
+                            calendar: model.calendar(withID: source.calendarID),
+                            fallbackTitle: source.calendarTitle
+                        )
+                    }
+                }
                 Label {
-                    CalendarLabel(calendar: model.calendar(withID: job.destinationCalendarID))
+                    CalendarLabel(
+                        calendar: model.calendar(withID: job.destinationCalendarID),
+                        fallbackTitle: job.destinationCalendarTitle
+                    )
                 } icon: {
                     Image(systemName: "arrow.turn.down.right").foregroundStyle(.secondary)
                 }
@@ -118,14 +130,20 @@ private struct JobRow: View {
 
 struct CalendarLabel: View {
     let calendar: EKCalendar?
+    var fallbackTitle: String? = nil
 
     var body: some View {
         HStack(spacing: 6) {
             Circle()
                 .fill(calendar.map { Color(cgColor: $0.cgColor) } ?? .gray)
                 .frame(width: 10, height: 10)
-            Text(calendar?.title ?? "Missing calendar")
+            Text(calendar?.title ?? fallbackTitle ?? String(localized: "Missing calendar"))
                 .lineLimit(1)
+            if calendar == nil {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            }
             if let source = calendar?.source.title {
                 Text(source)
                     .foregroundStyle(.secondary)

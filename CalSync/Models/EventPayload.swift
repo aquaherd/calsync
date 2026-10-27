@@ -31,6 +31,9 @@ nonisolated struct EventPayload: Codable, Hashable, Sendable {
 nonisolated struct SourceOccurrence: Hashable, Sendable {
     var key: String
     var payload: EventPayload
+    /// For a merge job, `key` is a `MeetingIdentity` shared by every source that contains
+    /// the meeting. This says whether that identity came from a join link.
+    var hasStrongIdentity = false
 }
 
 nonisolated struct DestinationEvent: Hashable, Sendable {

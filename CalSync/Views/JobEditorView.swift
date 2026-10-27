@@ -22,7 +22,7 @@ struct JobEditorView: View {
     }
 
     private var calendarsChanged: Bool {
-        original.sourceCalendarID != job.sourceCalendarID
+        Set(original.sources.map(\.calendarID)) != Set(job.sources.map(\.calendarID))
             || original.destinationCalendarID != job.destinationCalendarID
     }
 
@@ -47,8 +47,12 @@ struct JobEditorView: View {
                         .disabled(!job.isValid)
                 }
             }
-            .onChange(of: job.sourceCalendarID) { _, newValue in
-                if job.destinationCalendarID == newValue { job.destinationCalendarID = "" }
+            .onChange(of: job.destinationCalendarID) { _, newValue in
+                // The pickers already exclude each other; this also covers a calendar that
+                // reconnected after an account was removed and added again.
+                if !newValue.isEmpty {
+                    job.sources.removeAll { $0.calendarID == newValue }
+                }
             }
             .confirmationDialog(
                 "Calendars changed",
@@ -59,7 +63,7 @@ struct JobEditorView: View {
                 Button("Keep Old Copies") { save(removeOldCopies: false) }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Copies already in the old calendar stay unless you remove them. CalSync can no longer manage them afterwards.")
+                Text("Copies already in the destination calendar stay unless you remove them. CalSync can no longer manage them afterwards.")
             }
             .alert("CalSync", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
                 Button("OK") {}
@@ -70,33 +74,82 @@ struct JobEditorView: View {
     }
 
     private var calendarsSection: some View {
-        Section {
-            Picker("From", selection: $job.sourceCalendarID) {
-                Text("Choose…").tag("")
-                ForEach(model.calendarGroups(writableOnly: false)) { group in
-                    Section(group.title) {
-                        ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
-                            CalendarLabel(calendar: calendar).tag(calendar.calendarIdentifier)
+        Group {
+            Section {
+                if job.sources.isEmpty {
+                    Text("Choose one or more source calendars.")
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(job.sources) { source in
+                    HStack {
+                        CalendarLabel(
+                            calendar: model.calendar(withID: source.calendarID),
+                            fallbackTitle: source.calendarTitle
+                        )
+                        Spacer()
+                        Button(role: .destructive) {
+                            job.sources.removeAll { $0.id == source.id }
+                        } label: {
+                            Image(systemName: "minus.circle")
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel("Remove Calendar")
+                    }
+                }
+                Menu {
+                    ForEach(model.calendarGroups(writableOnly: false, excluding: sourceExclusions)) { group in
+                        Section(group.title) {
+                            ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
+                                Button {
+                                    addSource(calendar)
+                                } label: {
+                                    Text(verbatim: "\(calendar.title) — \(calendar.source.title)")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Add Calendar", systemImage: "plus")
+                }
+            } header: {
+                Text("From")
+            } footer: {
+                Text("Add more than one calendar to merge them. Meetings that appear in more than one source are copied once, using the first source's details.")
+            }
+
+            Section {
+                Picker("To", selection: $job.destinationCalendarID) {
+                    Text("Choose…").tag("")
+                    ForEach(model.calendarGroups(
+                        writableOnly: true,
+                        excluding: Set(job.sources.map(\.calendarID))
+                    )) { group in
+                        Section(group.title) {
+                            ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
+                                CalendarLabel(calendar: calendar).tag(calendar.calendarIdentifier)
+                            }
                         }
                     }
                 }
+            } header: {
+                Text("To")
+            } footer: {
+                Text("Outlook calendars appear here once your Outlook or Exchange account is added under Settings › Apps › Calendar › Calendar Accounts.")
             }
-            Picker("To", selection: $job.destinationCalendarID) {
-                Text("Choose…").tag("")
-                ForEach(model.calendarGroups(writableOnly: true, excluding: job.sourceCalendarID)) { group in
-                    Section(group.title) {
-                        ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
-                            CalendarLabel(calendar: calendar).tag(calendar.calendarIdentifier)
-                        }
-                    }
-                }
-            }
-        } header: {
-            Text("Calendars")
-        } footer: {
-            Text("Outlook calendars appear here once your Outlook or Exchange account is added under Settings › Apps › Calendar › Calendar Accounts.")
         }
         .pickerStyle(.navigationLink)
+    }
+
+    private var sourceExclusions: Set<String> {
+        Set(job.sources.map(\.calendarID)).union([job.destinationCalendarID])
+    }
+
+    private func addSource(_ calendar: EKCalendar) {
+        guard calendar.calendarIdentifier != job.destinationCalendarID,
+              !job.sources.contains(where: { $0.calendarID == calendar.calendarIdentifier }) else {
+            return
+        }
+        job.sources.append(SourceCalendar(calendarID: calendar.calendarIdentifier))
     }
 
     private var rangeSection: some View {

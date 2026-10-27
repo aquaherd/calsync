@@ -4,7 +4,8 @@ CalSync is a small iPhone app that copies events from one calendar to another, f
 
 ## Features
 
-- **Multiple syncs.** Each one copies a source calendar to a writable destination calendar.
+- **Multiple syncs.** Each one copies one or more calendars to a writable destination calendar.
+- **Merge calendars.** A sync can have several source calendars. A meeting that appears in more than one source is copied once. A join link (Teams, Zoom, Google Meet) identifies the same meeting even when the two copies have different titles; without one, the normalized title and start time are used.
 - **Updates stay in step.** Re-running a sync updates changed events and removes copies of deleted events. Each occurrence of a recurring event is copied as its own event.
 - **No duplicates, no hijacking.** CalSync records which source event each copy came from. If those records are lost (for example after a reinstall), it re-links only events that match in every copied field, and never takes over a copy that belongs to another sync.
 - **Large removals wait for you.** If a source account is offline or returns no events, the run stops before deleting the mirror. A foreground confirmation is required, so an unattended background run cannot wipe the destination.
@@ -16,13 +17,14 @@ CalSync is a small iPhone app that copies events from one calendar to another, f
 - **When it runs.** Syncs run when the app opens, on pull-to-refresh, and every so often in the background (`BGAppRefreshTask`).
 - **Undo.** "Remove Copied Events" deletes every event a sync has created.
 
-Mappings on disk contain only the destination identifier, the copied time range and a fingerprint of the copied fields. Notes, locations and URLs are not stored a second time.
+Mappings on disk contain only the destination identifier, the copied time range and a fingerprint of the copied fields. Notes, locations and URLs are not stored a second time; a merge job's meeting key is a hash.
 
 ## Safety behavior
 
 - A run that would remove more than half of the tracked events, or any events while the source returns none, stops before changing anything and asks for confirmation. Background runs only record the error; the question appears the next time the app is open.
-- Re-linking after a reinstall requires an exact match in every copied field and ignores copies that belong to another sync. A look-alike personal event is never taken over.
-- Changing a sync's source or destination asks whether to remove the copies in the old calendar. If you keep them, CalSync no longer manages them.
+- Re-linking after a reinstall requires an exact match in every copied field and ignores copies that belong to another sync. A look-alike personal event is never taken over. A merge job can additionally adopt a copy by its join link.
+- Changing a sync's sources or destination asks whether to remove the copies in the old calendar. If you keep them, CalSync no longer manages them.
+- A merge job remembers how many events each source had. If a source that used to have events returns none, removals stop and ask, so an offline account cannot silently delete that person's unique meetings.
 - If an account is removed and added again, its calendars get new identifiers. CalSync reconnects a sync by title and account when that match is unambiguous.
 
 ### Getting Outlook calendars onto the iPhone
@@ -31,6 +33,38 @@ CalSync works through iOS's calendar database (EventKit), so the Outlook calenda
 
 - add the account under **Settings › Apps › Calendar › Calendar Accounts › Add Account › Microsoft Exchange / Outlook.com**, or
 - in the Outlook iOS app, go to **Settings › your account › Sync Calendars** and turn it on.
+
+## Shared calendars for two people
+
+Two people in the same team can combine their work calendars into one shared iCloud calendar
+without seeing every meeting twice:
+
+```
+her phone:  her work ──► "Her work" (shared iCloud feed) ─┐
+                                                           ├─► "Our work" (shared, one writer)
+your phone: your work ─────────────────────────────────────┘
+```
+
+- Create the shared calendars in iCloud and share them with edit permission in **Calendar ›
+  Calendars › Info**. EventKit has no API to create a share or add participants, so this one
+  step has to happen in Calendar itself. A dedicated calendar is better than the family
+  calendar.
+- Her phone runs an ordinary sync from her work calendar into the feed. Keep the meeting
+  details, at least the join link: a private-mode feed carries only "Busy" blocks and cannot
+  be matched reliably against your copies.
+- Your phone runs a merge job with your work calendar and the feed as sources, into "Our work".
+  It writes the result once, so the existing mapping and removal rules still apply.
+- Only one phone writes the merged calendar. If both phones wrote it, each would need to know
+  which copies the other owns; that is a much larger CloudKit-style problem.
+- Show only "Our work" in Calendar to get the deduplicated view; the feed and the two work
+  calendars still contain their own events.
+
+This has two-hop freshness: "Our work" is as current as the last run on both phones. Background
+refresh is opportunistic, so open the app on both phones after a calendar change if the result
+matters immediately.
+
+As with any CalSync job, this copies work data into a personal iCloud account. Check what your
+employer allows before sharing a work calendar.
 
 ## Languages
 
@@ -45,11 +79,11 @@ lookup keys, so a new UI string needs an entry in `de.lproj/Localizable.strings`
 CalSync.xcodeproj           Xcode project (folders are file-system synchronized; just add files)
 CalSync/App                 App entry, background refresh, AppModel (state + persistence)
 CalSync/Sync                SyncPlanner (pure diff logic), SyncEngine (EventKit), MappingStore,
-                            OrgOnlyLinkFilter (Teams link removal)
+                            MeetingIdentity (join-link matching), OrgOnlyLinkFilter (Teams link removal)
 CalSync/Models              SyncJob, EventPayload
 CalSync/Views               SwiftUI screens
 CalSync/Resources/de.lproj  German localization (UI, plurals, permission text)
-CalSyncTests                Swift Testing unit tests for the planner, link filter and persistence
+CalSyncTests                Swift Testing unit tests for the planner, meeting identity, link filter and persistence
 Config/Signing.xcconfig     Team ID + bundle ID
 Config/Info.plist           Background task IDs, export-compliance flag
 Config/ExportOptions.plist  App Store Connect upload options
@@ -125,4 +159,4 @@ xcodebuild test -project CalSync.xcodeproj -scheme CalSync \
 
 ## Privacy
 
-Everything stays on the device. CalSync has no network code and no analytics. It keeps its sync settings and records of the copies it made in the app's Application Support folder. For the App Store privacy questionnaire, answer "Data Not Collected".
+Everything stays on the device. CalSync has no network code and no analytics. It keeps its sync settings and records of the copies it made in the app's Application Support folder. Events live in the calendars you choose; if you pick a shared iCloud calendar, iCloud syncs those entries like any other calendar entry. For the App Store privacy questionnaire, answer "Data Not Collected".

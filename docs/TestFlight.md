@@ -15,27 +15,47 @@ die nur mit Apple-ID bzw. App-Store-Connect-Zugang möglich sind.
 - Die Build-Nummer setzt `scripts/testflight.sh` automatisch auf einen UTC-Zeitstempel,
   sie steigt also bei jedem Upload.
 
+## Neu in diesem Build
+
+- **Kalender zusammenführen:** Eine Synchronisierung kann mehrere Quellkalender haben.
+  Ein Termin, der in mehreren Quellen liegt, wird nur einmal kopiert. Erkannt wird er am
+  Beitrittslink (Teams, Zoom, Google Meet) oder an Titel und Startzeit. Die erste Quelle
+  bestimmt Titel und Details.
+- **Sicherer bei leeren Quellen:** Wenn ein Quellkalender, der vorher Termine hatte,
+  plötzlich leer ist, stoppt CalSync das Löschen und fragt nach.
+- **Geteilte Ziele:** Ein Zielkalender kann ein geteilter iCloud-Kalender sein. Das Teilen
+  selbst passiert einmalig in der Kalender-App; EventKit kann keine Freigaben anlegen.
+
 ## Testgruppe
 
-Vorgesehen sind zwei Tester:
+Stand: 27. Oktober 2026.
 
-| Name          | E-Mail             | Art                   |
-|---------------|--------------------|-----------------------|
-| Hakan Erduman | hakan@erduman.de   | intern (Account-Inhaber) |
-| Nina          | [redacted]    | intern oder extern    |
+| Name          | E-Mail                              | Gruppe                              |
+|---------------|-------------------------------------|-------------------------------------|
+| Hakan Erduman | hakan@erduman.de                    | intern „Test“ (Build installiert)   |
+| Nina          | [redacted] | extern „Extern“ (nach Beta-Prüfung) |
 
-**Intern** (Builds sofort verfügbar, keine Beta-Prüfung):
+- Die interne Gruppe „Calsync“ wurde entfernt; „Test“ bleibt für Hakan.
+- Nina ist als externe Testerin in „Extern“ eingetragen. Für externe Tests braucht sie
+  kein App-Store-Connect-Benutzerkonto.
+- Build **1.0 (2610251841)** wurde am 25.10.2026 zur Beta-App-Prüfung eingereicht.
+  Der neue Build mit der Zusammenführungsfunktion wird nach dem Upload ebenfalls zur
+  Beta-Prüfung eingereicht.
 
-1. App Store Connect › Benutzer und Zugriff › Nina mit ihrer Apple-ID einladen.
-   Die Rolle „Entwickler“ oder „Marketing“ genügt für interne Tests.
-2. TestFlight › Interne Tests › Gruppe anlegen und beide E-Mail-Adressen zuordnen.
-3. Nach dem Upload den Build für die interne Gruppe freigeben.
+### Stammdaten in App Store Connect
 
-**Extern** (falls Nina nicht ins Team soll):
+- Kategorie: **Produktivität**
+- Altersfreigabe: **4+** (172 Länder oder Regionen; Brasilien Alle, Südkorea 00+, Vietnam)
+- Inhaltsrechte: keine Inhalte von Drittanbietern
+- App-Datenschutz: **Keine Daten erfasst** (veröffentlicht)
+- Testinformationen: deutsche Beta-Beschreibung, Feedback-Adresse und Kontakt hinterlegt
+- Verschlüsselung: `ITSAppUsesNonExemptEncryption = NO`, kein Export-Compliance-Fragebogen nötig
 
-1. TestFlight › Externe Tests › Gruppe anlegen, beide E-Mail-Adressen eintragen.
-2. Den ersten Build zur Beta-App-Review einreichen (dauert meist wenige Stunden).
-3. Nina bekommt eine Einladung per E-Mail und installiert die App über die TestFlight-App.
+### So funktioniert der externe Weg
+
+1. Build in eine externe Gruppe legen; der erste Build geht automatisch in die Beta-App-Prüfung.
+2. Nach der Freigabe erhalten die Tester:innen eine Einladung per E-Mail.
+3. Sie installieren die TestFlight-App und akzeptieren die Einladung dort.
 
 ## Upload
 
@@ -109,13 +129,22 @@ das Feld **App Name** ändern.
 
 ## „Was soll getestet werden?“ (zum Einfügen in TestFlight)
 
-> CalSync kopiert Termine aus einem Quellkalender in einen Zielkalender, zum Beispiel
-> von Outlook nach iCloud. Bitte prüfe:
+> CalSync kopiert Termine aus einem oder mehreren Quellkalendern in einen Zielkalender,
+> zum Beispiel von Outlook nach iCloud. Bitte prüfe:
 >
 > - Kalenderzugriff erlauben und eine Synchronisierung mit Quelle und Ziel anlegen.
 > - Einmal „Alle synchronisieren“ antippen: Werden Termine korrekt kopiert?
 > - Einen Termin in der Quelle ändern: Wird die Kopie beim nächsten Sync aktualisiert?
 > - Einen Termin in der Quelle löschen: Verschwindet die Kopie?
+> - **Zwei Quellkalender zusammenführen** („Von“ › Kalender hinzufügen). Ein Termin, der in
+>   beiden Quellen liegt, soll im Ziel nur einmal erscheinen, auch wenn die Titel leicht
+>   abweichen. Der Beitrittslink (Teams/Zoom) ist dabei das wichtigste Erkennungsmerkmal.
+> - Einen Termin nur im ersten Quellkalender löschen: Bleibt die Kopie erhalten, solange der
+>   zweite Quellkalender den Termin noch enthält?
+> - Einen Quellkalender vorübergehend leeren oder das Konto abmelden: CalSync soll das Löschen
+>   stoppen und nachfragen, statt die Kopien sofort zu entfernen.
+> - **Geteiltes Ziel:** Zielkalender in iCloud für beide freigeben (Kalender › Info › Teilen)
+>   und auf dem zweiten Gerät prüfen, ob die Kopien ankommen.
 > - Den privaten Modus testen: Steht in der Kopie nur der Zeitraum mit dem Titel „Beschäftigt“?
 > - „URL kopieren“ ausschalten und einen Termin mit Teams-Beitrittslink prüfen: Der Link und die Beitrittstexte sollen aus Notizen und Ort verschwinden, Meeting-ID und Passcode bleiben.
 > - Quelle oder Ziel ändern: Fragt CalSync, ob die alten Kopien entfernt werden sollen?

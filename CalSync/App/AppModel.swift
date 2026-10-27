@@ -89,9 +89,9 @@ final class AppModel {
         calendars.first { $0.calendarIdentifier == id }
     }
 
-    func calendarGroups(writableOnly: Bool, excluding excludedID: String? = nil) -> [CalendarGroup] {
+    func calendarGroups(writableOnly: Bool, excluding excludedIDs: Set<String> = []) -> [CalendarGroup] {
         let filtered = calendars.filter {
-            (!writableOnly || $0.allowsContentModifications) && $0.calendarIdentifier != excludedID
+            (!writableOnly || $0.allowsContentModifications) && !excludedIDs.contains($0.calendarIdentifier)
         }
         let grouped = Dictionary(grouping: filtered) { $0.source.sourceIdentifier }
         return grouped.map { id, calendars in
@@ -106,26 +106,37 @@ final class AppModel {
         var changed = false
 
         for index in jobs.indices {
-            if let calendar = calendar(withID: jobs[index].sourceCalendarID) {
-                if jobs[index].sourceCalendarTitle != calendar.title
-                    || jobs[index].sourceAccountID != calendar.source.sourceIdentifier
-                    || jobs[index].sourceAccountTitle != calendar.source.title {
-                    jobs[index].sourceCalendarTitle = calendar.title
-                    jobs[index].sourceAccountID = calendar.source.sourceIdentifier
-                    jobs[index].sourceAccountTitle = calendar.source.title
+            for sourceIndex in jobs[index].sources.indices {
+                let source = jobs[index].sources[sourceIndex]
+                if let calendar = calendar(withID: source.calendarID) {
+                    if source.calendarTitle != calendar.title
+                        || source.accountID != calendar.source.sourceIdentifier
+                        || source.accountTitle != calendar.source.title {
+                        jobs[index].sources[sourceIndex].calendarTitle = calendar.title
+                        jobs[index].sources[sourceIndex].accountID = calendar.source.sourceIdentifier
+                        jobs[index].sources[sourceIndex].accountTitle = calendar.source.title
+                        changed = true
+                    }
+                } else if let calendar = matchingCalendar(
+                    title: source.calendarTitle,
+                    accountID: source.accountID,
+                    accountTitle: source.accountTitle
+                ), calendar.calendarIdentifier != jobs[index].destinationCalendarID,
+                   !jobs[index].sources.contains(where: { $0.calendarID == calendar.calendarIdentifier }) {
+                    jobs[index].sources[sourceIndex].calendarID = calendar.calendarIdentifier
+                    jobs[index].sources[sourceIndex].calendarTitle = calendar.title
+                    jobs[index].sources[sourceIndex].accountID = calendar.source.sourceIdentifier
+                    jobs[index].sources[sourceIndex].accountTitle = calendar.source.title
                     changed = true
                 }
-            } else if let calendar = matchingCalendar(
-                title: jobs[index].sourceCalendarTitle,
-                accountID: jobs[index].sourceAccountID,
-                accountTitle: jobs[index].sourceAccountTitle
-            ) {
-                jobs[index].sourceCalendarID = calendar.calendarIdentifier
-                jobs[index].sourceCalendarTitle = calendar.title
-                jobs[index].sourceAccountID = calendar.source.sourceIdentifier
-                jobs[index].sourceAccountTitle = calendar.source.title
-                changed = true
             }
+
+            // A source that reconnected to the same calendar as another would feed the same
+            // events twice.
+            var seenSources = Set<String>()
+            let sourceCount = jobs[index].sources.count
+            jobs[index].sources.removeAll { !seenSources.insert($0.calendarID).inserted }
+            if jobs[index].sources.count != sourceCount { changed = true }
 
             if let calendar = calendar(withID: jobs[index].destinationCalendarID) {
                 if jobs[index].destinationCalendarTitle != calendar.title
@@ -140,7 +151,7 @@ final class AppModel {
                 title: jobs[index].destinationCalendarTitle,
                 accountID: jobs[index].destinationAccountID,
                 accountTitle: jobs[index].destinationAccountTitle
-            ), calendar.calendarIdentifier != jobs[index].sourceCalendarID {
+            ), !jobs[index].sources.contains(where: { $0.calendarID == calendar.calendarIdentifier }) {
                 jobs[index].destinationCalendarID = calendar.calendarIdentifier
                 jobs[index].destinationCalendarTitle = calendar.title
                 jobs[index].destinationAccountID = calendar.source.sourceIdentifier
@@ -174,10 +185,13 @@ final class AppModel {
 
     func save(_ job: SyncJob, removeOldCopies: Bool = false) throws {
         var job = job
-        if let calendar = calendar(withID: job.sourceCalendarID) {
-            job.sourceCalendarTitle = calendar.title
-            job.sourceAccountID = calendar.source.sourceIdentifier
-            job.sourceAccountTitle = calendar.source.title
+        job.sources.removeAll { $0.calendarID.isEmpty }
+        for index in job.sources.indices {
+            if let calendar = calendar(withID: job.sources[index].calendarID) {
+                job.sources[index].calendarTitle = calendar.title
+                job.sources[index].accountID = calendar.source.sourceIdentifier
+                job.sources[index].accountTitle = calendar.source.title
+            }
         }
         if let calendar = calendar(withID: job.destinationCalendarID) {
             job.destinationCalendarTitle = calendar.title
@@ -187,8 +201,8 @@ final class AppModel {
 
         if let index = jobs.firstIndex(where: { $0.id == job.id }) {
             let old = jobs[index]
-            let calendarsChanged = old.sourceCalendarID != job.sourceCalendarID
-                || old.destinationCalendarID != job.destinationCalendarID
+            let calendarsChanged = old.destinationCalendarID != job.destinationCalendarID
+                || Set(old.sources.map(\.calendarID)) != Set(job.sources.map(\.calendarID))
             if calendarsChanged {
                 if removeOldCopies {
                     _ = try SyncEngine(store: eventStore, mappings: mappings).removeCopies(of: old)
@@ -233,10 +247,10 @@ final class AppModel {
             if pendingMassDeletion?.jobID == jobID { pendingMassDeletion = nil }
         } catch SyncError.massDeletion(let count) {
             let error = SyncError.massDeletion(count)
-            result = SyncResult(error: error.localizedDescription, blockedDeletions: count)
+            result = errorResult(for: job, message: error.localizedDescription, blockedDeletions: count)
             enqueueMassDeletion(jobID: jobID, count: count)
         } catch {
-            result = SyncResult(error: error.localizedDescription)
+            result = errorResult(for: job, message: error.localizedDescription)
         }
         setResult(result, for: jobID)
     }
@@ -265,7 +279,10 @@ final class AppModel {
 
     func jobDescription(for jobID: UUID) -> String {
         guard let job = jobs.first(where: { $0.id == jobID }) else { return "" }
-        let source = calendar(withID: job.sourceCalendarID)?.title ?? job.sourceCalendarTitle ?? ""
+        let sources = job.sources.compactMap { source in
+            calendar(withID: source.calendarID)?.title ?? source.calendarTitle
+        }
+        let source = sources.isEmpty ? "?" : sources.joined(separator: " + ")
         let destination = calendar(withID: job.destinationCalendarID)?.title ?? job.destinationCalendarTitle ?? ""
         return "\(source) → \(destination)"
     }
@@ -283,6 +300,16 @@ final class AppModel {
         // `lastResult` and ask again on the next sync.
         guard pendingMassDeletion == nil || pendingMassDeletion?.jobID == jobID else { return }
         pendingMassDeletion = MassDeletionRequest(jobID: jobID, count: count)
+    }
+
+    /// An error run still knows how many events each source had last time. Keeping that around
+    /// lets the next run tell an empty source from an account that was briefly unavailable.
+    private func errorResult(for job: SyncJob, message: String, blockedDeletions: Int = 0) -> SyncResult {
+        var result = SyncResult()
+        result.error = message
+        result.blockedDeletions = blockedDeletions
+        result.sourceCounts = job.lastResult?.sourceCounts ?? [:]
+        return result
     }
 
     private func setResult(_ result: SyncResult?, for jobID: UUID) {

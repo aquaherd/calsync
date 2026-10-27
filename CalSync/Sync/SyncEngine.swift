@@ -2,7 +2,7 @@ import EventKit
 import Foundation
 
 enum SyncError: LocalizedError {
-    case sourceMissing
+    case sourceMissing(String?)
     case destinationMissing
     case destinationReadOnly
     case sameCalendar
@@ -10,14 +10,22 @@ enum SyncError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .sourceMissing: String(localized: "Source calendar not found.")
+        case .sourceMissing(let title):
+            if let title, !title.isEmpty {
+                String.localizedStringWithFormat(
+                    NSLocalizedString("Source calendar “%@” not found.", comment: ""),
+                    title
+                )
+            } else {
+                String(localized: "Source calendar not found.")
+            }
         case .destinationMissing: String(localized: "Destination calendar not found.")
         case .destinationReadOnly: String(localized: "Destination calendar is read-only.")
         case .sameCalendar: String(localized: "Source and destination must differ.")
         case .massDeletion(let count):
             String.localizedStringWithFormat(
                 NSLocalizedString(
-                    "Stopped before removing copied events (%lld) because the source calendar looks empty or much smaller. Check the source account, then confirm the removal.",
+                    "Stopped before removing copied events (%lld) because a source calendar looks empty or much smaller. Check the source account, then confirm the removal.",
                     comment: ""
                 ),
                 count
@@ -34,13 +42,31 @@ struct SyncEngine {
     /// - Parameter allowMassDeletion: Set only after the user confirmed that a very large removal
     ///   is intended. Background runs never set it.
     func run(_ job: SyncJob, now: Date = .now, allowMassDeletion: Bool = false) throws -> SyncResult {
-        guard job.sourceCalendarID != job.destinationCalendarID else { throw SyncError.sameCalendar }
-        guard let source = store.calendar(withIdentifier: job.sourceCalendarID) else { throw SyncError.sourceMissing }
+        guard !job.sources.isEmpty else { throw SyncError.sourceMissing(nil) }
+        guard !job.sources.contains(where: { $0.calendarID == job.destinationCalendarID }) else {
+            throw SyncError.sameCalendar
+        }
         guard let destination = store.calendar(withIdentifier: job.destinationCalendarID) else { throw SyncError.destinationMissing }
         guard destination.allowsContentModifications else { throw SyncError.destinationReadOnly }
 
         let window = job.window(now: now)
-        let occurrences = events(in: source, window: window).compactMap { occurrence(from: $0, options: job.options) }
+        var occurrences: [SourceOccurrence] = []
+        var sourceCounts: [String: Int] = [:]
+        for source in job.sources {
+            guard let calendar = store.calendar(withIdentifier: source.calendarID) else {
+                throw SyncError.sourceMissing(source.calendarTitle ?? source.calendarID)
+            }
+            let sourceEvents = events(in: calendar, window: window)
+            sourceCounts[source.calendarID] = sourceEvents.count
+            occurrences += sourceEvents.compactMap {
+                occurrence(from: $0, options: job.options, merge: job.isMerge)
+            }
+        }
+        // An empty source is only suspicious when it had events on the last run. A feed that
+        // never had anything is simply empty, and blocking every removal would be noise.
+        let previousCounts = job.lastResult?.sourceCounts ?? [:]
+        let hasEmptySource = job.isMerge
+            && SyncPlanner.hasSuspiciousEmptySource(current: sourceCounts, previous: previousCounts)
         var mapping = try mappings.load(for: job.id)
 
         let existingIDs = Set(mapping.values.compactMap { entry -> String? in
@@ -61,15 +87,21 @@ struct SyncEngine {
             claimedDestinationIDs: claimedElsewhere,
             destinationEvents: destinationEvents,
             window: window,
-            deleteRemoved: job.options.deleteRemoved
+            deleteRemoved: job.options.deleteRemoved,
+            mergeDuplicates: job.isMerge
         )
 
         if !allowMassDeletion,
-           let blocked = SyncPlanner.blockedDeletionCount(in: plan, sourceCount: occurrences.count) {
+           let blocked = SyncPlanner.blockedDeletionCount(
+            in: plan,
+            sourceCount: occurrences.count,
+            hasEmptySource: hasEmptySource
+           ) {
             throw SyncError.massDeletion(blocked)
         }
 
         var result = SyncResult(date: now, unchanged: plan.unchanged)
+        result.sourceCounts = sourceCounts
         var created: [(key: String, event: EKEvent, payload: EventPayload)] = []
 
         for key in plan.forget { mapping.removeValue(forKey: key) }
@@ -126,7 +158,10 @@ struct SyncEngine {
     func removeCopies(of job: SyncJob) throws -> Int {
         let mapping = try mappings.load(for: job.id)
         var removed = 0
+        var removedIDs = Set<String>()
         for entry in mapping.values {
+            // An old and a new key can point at the same copy after a mapping re-key.
+            guard removedIDs.insert(entry.destinationID).inserted else { continue }
             guard let event = store.event(withIdentifier: entry.destinationID),
                   event.calendar?.calendarIdentifier == job.destinationCalendarID else { continue }
             try store.remove(event, span: .thisEvent, commit: false)
@@ -144,7 +179,7 @@ struct SyncEngine {
         return store.events(matching: predicate)
     }
 
-    private func occurrence(from event: EKEvent, options: SyncOptions) -> SourceOccurrence? {
+    private func occurrence(from event: EKEvent, options: SyncOptions, merge: Bool) -> SourceOccurrence? {
         if options.skipAllDay && event.isAllDay { return nil }
         if options.skipDeclined {
             if event.status == .canceled { return nil }
@@ -152,6 +187,8 @@ struct SyncEngine {
         }
 
         var payload = payload(from: event)
+        // The join link must be read before private mode or the org-only link filter removes it.
+        let identity = merge ? MeetingIdentity.of(payload) : nil
         if options.privateMode {
             payload.title = options.privateTitle
             payload.location = nil
@@ -165,9 +202,21 @@ struct SyncEngine {
         if !options.copyAlarms { payload.alarmOffsets = [] }
         payload = OrgOnlyLinkFilter.strip(from: payload, copyURL: options.copyURL)
 
-        let itemID = event.calendarItemExternalIdentifier ?? event.calendarItemIdentifier
-        let occurrenceDate: Date = event.occurrenceDate ?? event.startDate
-        return SourceOccurrence(key: "\(itemID)|\(Int(occurrenceDate.timeIntervalSince1970))", payload: payload)
+        let key: String
+        if let identity {
+            // Every source that contains this meeting produces the same key, so the planner
+            // copies it once and the mapping survives the meeting leaving one source.
+            key = identity.key
+        } else {
+            let itemID = event.calendarItemExternalIdentifier ?? event.calendarItemIdentifier
+            let occurrenceDate: Date = event.occurrenceDate ?? event.startDate
+            key = "\(itemID)|\(Int(occurrenceDate.timeIntervalSince1970))"
+        }
+        return SourceOccurrence(
+            key: key,
+            payload: payload,
+            hasStrongIdentity: identity?.isStrong ?? false
+        )
     }
 
     private func payload(from event: EKEvent) -> EventPayload {
