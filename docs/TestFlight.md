@@ -33,14 +33,15 @@ Stand: 27. Oktober 2026.
 | Name          | E-Mail                              | Gruppe                              |
 |---------------|-------------------------------------|-------------------------------------|
 | Hakan Erduman | hakan@erduman.de                    | intern „Test“ (Build installiert)   |
-| Nina          | [redacted] | extern „Extern“ (nach Beta-Prüfung) |
+| Nina          | [redacted] | extern „Extern“ (Build freigegeben) |
+| Nina (privat) | [redacted]                     | extern „Extern“ (weiterhin eingeladen) |
 
 - Die interne Gruppe „Calsync“ wurde entfernt; „Test“ bleibt für Hakan.
-- Nina ist als externe Testerin in „Extern“ eingetragen. Für externe Tests braucht sie
-  kein App-Store-Connect-Benutzerkonto.
-- Build **1.0 (2610251841)** wurde am 25.10.2026 zur Beta-App-Prüfung eingereicht.
-  Der neue Build mit der Zusammenführungsfunktion wird nach dem Upload ebenfalls zur
-  Beta-Prüfung eingereicht.
+- Nina ist mit ihrer dienstlichen Adresse als externe Testerin in „Extern“ eingetragen;
+  die private Adresse bleibt vorsichtshalber ebenfalls in der Gruppe.
+- Build **1.0 (2610271745)** wurde am 27.10.2026 hochgeladen, von der Beta-App-Prüfung
+  freigegeben und per „Notify Testers“ an die Gruppe „Extern“ verteilt. Status: **Testing**.
+- Build **1.0 (2610251841)** bleibt ebenfalls für „Extern“ verfügbar (Status: Testing).
 
 ### Stammdaten in App Store Connect
 
