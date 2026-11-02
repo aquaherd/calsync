@@ -116,13 +116,13 @@ Choose **Product › Archive**, then **Distribute App › App Store Connect › 
 
 ### Upload from the command line
 
-If your Apple ID is signed in to Xcode (as for BatLog's `just testflight-upload`), just run:
+From the project root, run:
 
 ```bash
 ./scripts/testflight.sh
 ```
 
-Or use an App Store Connect API key:
+The script uses an App Store Connect API key from `~/.config/appstore` when present, and otherwise falls back to the Apple ID signed in to Xcode. To pass a key explicitly:
 
 ```bash
 export ASC_KEY_ID=XXXXXXXXXX
@@ -131,11 +131,13 @@ export ASC_KEY_PATH=~/private_keys/AuthKey_XXXXXXXXXX.p8
 ./scripts/testflight.sh
 ```
 
+If the key lives in `~/.config/appstore`, put `keyid`, `issuer` and `AuthKey_*.p8` there and just run `./scripts/testflight.sh`; the script picks them up when `ASC_KEY_*` is not set.
+
 The build number defaults to a UTC timestamp, so it goes up with every upload. Set `MARKETING_VERSION=1.1` to bump the version users see. Set `EXPORT_ONLY=1` to write an `.ipa` to `build/export` instead of uploading.
 
 Once App Store Connect finishes processing the build, it appears in TestFlight. Internal testers can install it right away. External testers need a short Beta App Review first.
 
-The planned testers are `hakan@erduman.de` and `[redacted]`. See [docs/TestFlight.md](docs/TestFlight.md) for the German setup steps and a ready-to-paste "What to Test" text.
+The testers are `hakan@erduman.de` and Nina at `[redacted]` (her older `[redacted]` remains in the group). See [docs/TestFlight.md](docs/TestFlight.md) for the German setup steps and a ready-to-paste "What to Test" text.
 
 ### Upload from GitHub Actions
 

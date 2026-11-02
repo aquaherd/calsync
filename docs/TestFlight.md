@@ -77,6 +77,10 @@ export ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 export ASC_KEY_PATH=~/private_keys/AuthKey_XXXXXXXXXX.p8
 ./scripts/testflight.sh
 
+# Variante 3: Schlüssel unter ~/.config/appstore
+# Erwartet keyid, issuer und AuthKey_*.p8; ASC_KEY_* kann leer bleiben.
+./scripts/testflight.sh
+
 # Nur bauen, nicht hochladen
 EXPORT_ONLY=1 ./scripts/testflight.sh
 ```

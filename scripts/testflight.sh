@@ -9,6 +9,8 @@
 #       export ASC_KEY_PATH=~/private_keys/AuthKey_XXXXXXXXXX.p8
 #
 # Optional:
+#   ASC_KEY_DIR       directory with keyid, issuer and AuthKey_*.p8
+#                     (default: ~/.config/appstore)
 #   DEVELOPMENT_TEAM  overrides the team in Config/Signing.xcconfig
 #   APP_BUNDLE_ID     overrides the bundle ID in Config/Signing.xcconfig
 #   BUILD_NUMBER      defaults to a UTC timestamp (must increase for every upload)
@@ -27,6 +29,21 @@ export PATH="/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
 BUILD_NUMBER="${BUILD_NUMBER:-$(date -u +%y%m%d%H%M)}"
 ARCHIVE_PATH="build/CalSync.xcarchive"
 EXPORT_PATH="build/export"
+
+appstore_dir="${ASC_KEY_DIR:-$HOME/.config/appstore}"
+if [[ -z "${ASC_KEY_ID:-}" && -f "$appstore_dir/keyid" ]]; then
+  ASC_KEY_ID="$(tr -d '\r\n' < "$appstore_dir/keyid")"
+fi
+if [[ -z "${ASC_ISSUER_ID:-}" && -f "$appstore_dir/issuer" ]]; then
+  ASC_ISSUER_ID="$(tr -d '\r\n' < "$appstore_dir/issuer")"
+fi
+if [[ -z "${ASC_KEY_PATH:-}" ]]; then
+  if [[ -n "${ASC_KEY_ID:-}" && -f "$appstore_dir/AuthKey_${ASC_KEY_ID}.p8" ]]; then
+    ASC_KEY_PATH="$appstore_dir/AuthKey_${ASC_KEY_ID}.p8"
+  else
+    ASC_KEY_PATH="$(find "$appstore_dir" -maxdepth 1 -name 'AuthKey_*.p8' -print -quit 2>/dev/null || true)"
+  fi
+fi
 
 auth_args=()
 if [[ -n "${ASC_KEY_ID:-}" || -n "${ASC_ISSUER_ID:-}" || -n "${ASC_KEY_PATH:-}" ]]; then
