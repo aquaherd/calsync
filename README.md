@@ -6,6 +6,7 @@ CalSync is a small iPhone app that copies events from one calendar to another, f
 
 - **Multiple syncs.** Each one copies one or more calendars to a writable destination calendar.
 - **Merge calendars.** A sync can have several source calendars. A meeting that appears in more than one source is copied once. A join link (Teams, Zoom, Google Meet) identifies the same meeting even when the two copies have different titles; without one, the normalized title and start time are used.
+- **Create the destination.** In the sync editor, **New Calendar…** creates an event calendar in iCloud or On My iPhone. Sharing it with someone else remains a one-time step in Calendar.
 - **Updates stay in step.** Re-running a sync updates changed events and removes copies of deleted events. Each occurrence of a recurring event is copied as its own event.
 - **No duplicates, no hijacking.** CalSync records which source event each copy came from. If those records are lost (for example after a reinstall), it re-links only events that match in every copied field, and never takes over a copy that belongs to another sync.
 - **Large removals wait for you.** If a source account is offline or returns no events, the run stops before deleting the mirror. A foreground confirmation is required, so an unattended background run cannot wipe the destination.
@@ -45,10 +46,10 @@ her phone:  her work ──► "Her work" (shared iCloud feed) ─┐
 your phone: your work ─────────────────────────────────────┘
 ```
 
-- Create the shared calendars in iCloud and share them with edit permission in **Calendar ›
-  Calendars › Info**. EventKit has no API to create a share or add participants, so this one
-  step has to happen in Calendar itself. A dedicated calendar is better than the family
-  calendar.
+- Create the calendars with **New Calendar…** in the sync editor, or in Calendar itself, and
+  put them in iCloud. Then share them with edit permission in **Calendar › Calendars › Info**.
+  EventKit can create and write a calendar but has no API to add participants, so the sharing
+  step has to happen in Calendar. A dedicated calendar is better than the family calendar.
 - Her phone runs an ordinary sync from her work calendar into the feed. Keep the meeting
   details, at least the join link: a private-mode feed carries only "Busy" blocks and cannot
   be matched reliably against your copies.

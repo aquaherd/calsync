@@ -22,6 +22,29 @@ enum StorageError: LocalizedError {
     }
 }
 
+enum CalendarCreationError: LocalizedError {
+    case emptyName
+    case duplicateName
+    case sourceMissing
+    case sourceNotWritable
+    case failed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .emptyName:
+            String(localized: "Enter a name for the new calendar.")
+        case .duplicateName:
+            String(localized: "A calendar with this name already exists in that account.")
+        case .sourceMissing:
+            String(localized: "The account for the new calendar is no longer available.")
+        case .sourceNotWritable:
+            String(localized: "This account cannot create calendars. Choose iCloud or On My iPhone.")
+        case .failed(let message):
+            message
+        }
+    }
+}
+
 @Observable
 final class AppModel {
     static let shared = AppModel()
@@ -87,6 +110,80 @@ final class AppModel {
 
     func calendar(withID id: String) -> EKCalendar? {
         calendars.first { $0.calendarIdentifier == id }
+    }
+
+    /// Accounts in which EventKit can create an event calendar. Subscribed and birthday
+    /// calendars are read-only, and Exchange accounts generally do not accept new calendars.
+    var creatableSources: [EKSource] {
+        eventStore.sources
+            .filter { source in
+                switch source.sourceType {
+                case .local, .calDAV, .mobileMe: true
+                default: false
+                }
+            }
+            .sorted {
+                let left = sourceRank($0)
+                let right = sourceRank($1)
+                if left != right { return left < right }
+                return $0.title.localizedStandardCompare($1.title) == .orderedAscending
+            }
+    }
+
+    var defaultCalendarSourceID: String? {
+        if let source = eventStore.defaultCalendarForNewEvents?.source,
+           creatableSources.contains(where: { $0.sourceIdentifier == source.sourceIdentifier }) {
+            return source.sourceIdentifier
+        }
+        return creatableSources.first?.sourceIdentifier
+    }
+
+    /// Creates a new event calendar in an iCloud or local source. Sharing the calendar is a
+    /// separate step in the Calendar app; EventKit cannot add participants.
+    func createCalendar(title: String, sourceID: String) throws -> EKCalendar {
+        let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { throw CalendarCreationError.emptyName }
+        guard let source = eventStore.sources.first(where: { $0.sourceIdentifier == sourceID }) else {
+            throw CalendarCreationError.sourceMissing
+        }
+        guard creatableSources.contains(where: { $0.sourceIdentifier == sourceID }) else {
+            throw CalendarCreationError.sourceNotWritable
+        }
+        guard !calendars.contains(where: {
+            $0.source.sourceIdentifier == sourceID
+                && $0.title.localizedCaseInsensitiveCompare(name) == .orderedSame
+        }) else {
+            throw CalendarCreationError.duplicateName
+        }
+
+        let calendar = EKCalendar(for: .event, eventStore: eventStore)
+        calendar.title = name
+        calendar.source = source
+        do {
+            try eventStore.saveCalendar(calendar, commit: true)
+        } catch {
+            throw CalendarCreationError.failed(error.localizedDescription)
+        }
+
+        refreshCalendars()
+        if let saved = calendars.first(where: { $0.calendarIdentifier == calendar.calendarIdentifier }) {
+            return saved
+        }
+        // A just-created calendar is occasionally not in the refreshed list yet. Keep it
+        // visible so the editor can select it immediately.
+        calendars.append(calendar)
+        calendars.sort {
+            ($0.source.title, $0.title) < ($1.source.title, $1.title)
+        }
+        return calendar
+    }
+
+    private func sourceRank(_ source: EKSource) -> Int {
+        switch source.sourceType {
+        case .calDAV, .mobileMe: 0
+        case .local: 1
+        default: 2
+        }
     }
 
     func calendarGroups(writableOnly: Bool, excluding excludedIDs: Set<String> = []) -> [CalendarGroup] {

@@ -15,7 +15,7 @@ die nur mit Apple-ID bzw. App-Store-Connect-Zugang möglich sind.
 - Die Build-Nummer setzt `scripts/testflight.sh` automatisch auf einen UTC-Zeitstempel,
   sie steigt also bei jedem Upload.
 
-## Neu in diesem Build
+## Neu in 1.0 (2610271745)
 
 - **Kalender zusammenführen:** Eine Synchronisierung kann mehrere Quellkalender haben.
   Ein Termin, der in mehreren Quellen liegt, wird nur einmal kopiert. Erkannt wird er am
@@ -25,6 +25,11 @@ die nur mit Apple-ID bzw. App-Store-Connect-Zugang möglich sind.
   plötzlich leer ist, stoppt CalSync das Löschen und fragt nach.
 - **Geteilte Ziele:** Ein Zielkalender kann ein geteilter iCloud-Kalender sein. Das Teilen
   selbst passiert einmalig in der Kalender-App; EventKit kann keine Freigaben anlegen.
+
+## Nächster Build
+
+- **Neuer Zielkalender:** Im Editor unter „Nach“ › „Neuer Kalender …“ lässt sich direkt ein
+  Kalender in iCloud oder „Auf meinem iPhone“ anlegen und als Ziel wählen.
 
 ## Testgruppe
 
@@ -146,6 +151,8 @@ das Feld **App Name** ändern.
 >   stoppen und nachfragen, statt die Kopien sofort zu entfernen.
 > - **Geteiltes Ziel:** Zielkalender in iCloud für beide freigeben (Kalender › Info › Teilen)
 >   und auf dem zweiten Gerät prüfen, ob die Kopien ankommen.
+> - **Neuen Zielkalender anlegen (nächster Build):** Im Editor unter „Nach“ › „Neuer Kalender …“
+>   einen Kalender in iCloud erstellen, als Ziel wählen und einen Termin dorthin synchronisieren.
 > - Den privaten Modus testen: Steht in der Kopie nur der Zeitraum mit dem Titel „Beschäftigt“?
 > - „URL kopieren“ ausschalten und einen Termin mit Teams-Beitrittslink prüfen: Der Link und die Beitrittstexte sollen aus Notizen und Ort verschwinden, Meeting-ID und Passcode bleiben.
 > - Quelle oder Ziel ändern: Fragt CalSync, ob die alten Kopien entfernt werden sollen?

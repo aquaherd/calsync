@@ -8,6 +8,7 @@ struct JobEditorView: View {
     @State private var confirmRemoveCopies = false
     @State private var confirmDelete = false
     @State private var confirmCalendarChange = false
+    @State private var showingNewCalendar = false
     @State private var message: String?
     private let isNew: Bool
     private let original: SyncJob
@@ -70,6 +71,11 @@ struct JobEditorView: View {
             } message: {
                 Text(message ?? "")
             }
+            .sheet(isPresented: $showingNewCalendar) {
+                NewCalendarSheet { calendar in
+                    job.destinationCalendarID = calendar.calendarIdentifier
+                }
+            }
         }
     }
 
@@ -131,10 +137,23 @@ struct JobEditorView: View {
                         }
                     }
                 }
+                if model.creatableSources.isEmpty {
+                    Text("No account can create calendars. Add an iCloud account in Settings.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button {
+                        showingNewCalendar = true
+                    } label: {
+                        Label("New Calendar…", systemImage: "plus")
+                    }
+                }
             } header: {
                 Text("To")
             } footer: {
-                Text("Outlook calendars appear here once your Outlook or Exchange account is added under Settings › Apps › Calendar › Calendar Accounts.")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Outlook calendars appear here once your Outlook or Exchange account is added under Settings › Apps › Calendar › Calendar Accounts.")
+                    Text("New calendars are created in iCloud or On My iPhone. Share one in Calendar to let someone else see it.")
+                }
             }
         }
         .pickerStyle(.navigationLink)
