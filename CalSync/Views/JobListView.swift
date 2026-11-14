@@ -3,17 +3,22 @@ import SwiftUI
 
 struct JobListView: View {
     @Environment(AppModel.self) private var model
-    @State private var editorJob: SyncJob?
+    let selectedJobID: UUID?
+    let onSelect: (SyncJob) -> Void
 
     var body: some View {
         List {
             ForEach(model.jobs) { job in
                 Button {
-                    editorJob = job
+                    onSelect(job)
                 } label: {
                     JobRow(job: job)
                 }
                 .tint(.primary)
+                .accessibilityAddTraits(job.id == selectedJobID ? .isSelected : [])
+                .listRowBackground(
+                    job.id == selectedJobID ? Color.accentColor.opacity(0.12) : nil
+                )
                 .swipeActions(edge: .leading) {
                     Button("Sync", systemImage: "arrow.triangle.2.circlepath") {
                         Task { await model.sync(job.id) }
@@ -30,7 +35,7 @@ struct JobListView: View {
                 } description: {
                     Text("Add a sync to copy events from one or more calendars, such as Outlook, to another, such as iCloud.")
                 } actions: {
-                    Button("Add Sync") { editorJob = SyncJob() }
+                    Button("Add Sync") { onSelect(SyncJob()) }
                         .buttonStyle(.borderedProminent)
                 }
             }
@@ -42,39 +47,12 @@ struct JobListView: View {
                     Task { await model.syncAll() }
                 }
                 .disabled(model.jobs.isEmpty || !model.runningJobs.isEmpty)
+                .keyboardShortcut("r", modifiers: .command)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Add Sync", systemImage: "plus") { editorJob = SyncJob() }
+                Button("Add Sync", systemImage: "plus") { onSelect(SyncJob()) }
+                    .keyboardShortcut("n", modifiers: .command)
             }
-        }
-        .sheet(item: $editorJob) { job in
-            JobEditorView(job: job, isNew: !model.jobs.contains { $0.id == job.id })
-        }
-        .alert(
-            "Removal Stopped",
-            isPresented: Binding(
-                get: { model.pendingMassDeletion != nil },
-                set: { _ in }
-            ),
-            presenting: model.pendingMassDeletion
-        ) { request in
-            Button("Remove Anyway", role: .destructive) {
-                Task { await model.confirmMassDeletion() }
-            }
-            Button("Cancel", role: .cancel) {
-                model.cancelMassDeletion()
-            }
-        } message: { request in
-            Text(
-                String.localizedStringWithFormat(
-                    NSLocalizedString(
-                        "“%@” would remove copied events (%lld) because a source calendar looks empty or much smaller. Check the source account first.",
-                        comment: ""
-                    ),
-                    model.jobDescription(for: request.jobID),
-                    request.count
-                )
-            )
         }
     }
 }

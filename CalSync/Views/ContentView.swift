@@ -5,18 +5,21 @@ struct ContentView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        NavigationStack {
-            Group {
-                switch model.authorization {
-                case .fullAccess:
-                    JobListView()
-                case .notDetermined:
+        Group {
+            switch model.authorization {
+            case .fullAccess:
+                JobsView()
+            case .notDetermined:
+                NavigationStack {
                     AccessRequestView()
-                default:
+                        .navigationTitle("CalSync")
+                }
+            default:
+                NavigationStack {
                     AccessDeniedView()
+                        .navigationTitle("CalSync")
                 }
             }
-            .navigationTitle("CalSync")
         }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
             model.refreshCalendars()

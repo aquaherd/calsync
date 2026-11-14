@@ -11,6 +11,7 @@ struct CalSyncApp: App {
             ContentView()
                 .environment(model)
         }
+        .defaultSize(width: 1100, height: 800)
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:

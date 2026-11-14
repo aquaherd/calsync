@@ -1,10 +1,11 @@
 # CalSync
 
-CalSync is a small iPhone app that copies events from one calendar to another, for example from a work Outlook/Exchange calendar to a personal iCloud calendar. It's built with SwiftUI and EventKit and targets iOS 26 and later.
+CalSync is a small app for iPhone and iPad that copies events from one calendar to another, for example from a work Outlook/Exchange calendar to a personal iCloud calendar. It's built with SwiftUI and EventKit and targets iOS 26 and later.
 
 ## Features
 
 - **Multiple syncs.** Each one copies one or more calendars to a writable destination calendar.
+- **At home on iPad.** On iPad a two-column layout shows the syncs on the left and the editor for the selected sync on the right. It works in any window size, including Split View and Slide Over, and a hardware keyboard can use ⌘N for a new sync and ⌘R to sync all.
 - **Merge calendars.** A sync can have several source calendars. A meeting that appears in more than one source is copied once. A join link (Teams, Zoom, Google Meet) identifies the same meeting even when the two copies have different titles; without one, the normalized title and start time are used.
 - **Create the destination.** In the sync editor, **New Calendar…** creates an event calendar in iCloud or On My iPhone. Sharing it with someone else remains a one-time step in Calendar.
 - **Updates stay in step.** Re-running a sync updates changed events and removes copies of deleted events. Each occurrence of a recurring event is copied as its own event.
@@ -100,7 +101,7 @@ scripts/make-icon.swift     Regenerates the app icon
    APP_BUNDLE_ID = de.erduman.calsync
    ```
    To override them on one machine, put the values in `Config/Local.xcconfig`. That file is git-ignored and is included automatically.
-2. Open `CalSync.xcodeproj` in Xcode and run the app on your iPhone.
+2. Open `CalSync.xcodeproj` in Xcode and run the app on your iPhone or iPad.
 
 ## Publishing to TestFlight
 

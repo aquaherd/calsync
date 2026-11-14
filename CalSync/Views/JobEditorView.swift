@@ -2,6 +2,10 @@ import EventKit
 import SwiftUI
 
 struct JobEditorView: View {
+    enum FinishAction {
+        case cancel, save, delete
+    }
+
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var job: SyncJob
@@ -10,16 +14,18 @@ struct JobEditorView: View {
     @State private var confirmCalendarChange = false
     @State private var showingNewCalendar = false
     @State private var message: String?
-    private let isNew: Bool
-    private let original: SyncJob
+    @State private var isNew: Bool
+    @State private var original: SyncJob
+    private var onFinish: ((FinishAction) -> Void)?
 
     private static let pastChoices = [0, 1, 7, 14, 30, 90, 365]
     private static let aheadChoices = [7, 14, 30, 60, 90, 180, 365]
 
-    init(job: SyncJob, isNew: Bool) {
+    init(job: SyncJob, isNew: Bool, onFinish: ((FinishAction) -> Void)? = nil) {
         _job = State(initialValue: job)
-        original = job
-        self.isNew = isNew
+        _original = State(initialValue: job)
+        _isNew = State(initialValue: isNew)
+        self.onFinish = onFinish
     }
 
     private var calendarsChanged: Bool {
@@ -34,14 +40,16 @@ struct JobEditorView: View {
                 rangeSection
                 detailsSection
                 behaviorSection
-                if let result = job.lastResult { lastSyncSection(result) }
+                if let result = model.jobs.first(where: { $0.id == job.id })?.lastResult ?? job.lastResult {
+                    lastSyncSection(result)
+                }
                 if !isNew { dangerSection }
             }
             .navigationTitle(isNew ? "New Sync" : "Edit Sync")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { finish(.cancel) }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { requestSave() }
@@ -75,6 +83,7 @@ struct JobEditorView: View {
                 NewCalendarSheet { calendar in
                     job.destinationCalendarID = calendar.calendarIdentifier
                 }
+                .presentationSizing(.form)
             }
         }
     }
@@ -248,7 +257,7 @@ struct JobEditorView: View {
                 .confirmationDialog("Delete this sync? Copied events stay in the destination calendar.", isPresented: $confirmDelete, titleVisibility: .visible) {
                     Button("Delete Sync", role: .destructive) {
                         model.delete(job.id)
-                        dismiss()
+                        finish(.delete)
                     }
                 }
         }
@@ -264,12 +273,25 @@ struct JobEditorView: View {
 
     private func save(removeOldCopies: Bool) {
         do {
+            var job = self.job
+            job.lastResult = model.jobs.first { $0.id == job.id }?.lastResult
             try model.save(job, removeOldCopies: removeOldCopies)
+            self.job = job
+            original = job
+            isNew = false
             let id = job.id
-            dismiss()
+            finish(.save)
             Task { await model.sync(id) }
         } catch {
             message = error.localizedDescription
+        }
+    }
+
+    private func finish(_ action: FinishAction) {
+        if let onFinish {
+            onFinish(action)
+        } else {
+            dismiss()
         }
     }
 

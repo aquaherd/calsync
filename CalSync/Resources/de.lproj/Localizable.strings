@@ -22,6 +22,10 @@
 "Not synced yet" = "Noch nicht synchronisiert";
 "Missing calendar" = "Kalender fehlt";
 
+/* Split layout */
+"No Sync Selected" = "Keine Synchronisierung ausgewählt";
+"Select a sync to edit it." = "Wähle eine Synchronisierung zum Bearbeiten aus.";
+
 /* Job editor */
 "New Sync" = "Neue Synchronisierung";
 "Edit Sync" = "Synchronisierung bearbeiten";
