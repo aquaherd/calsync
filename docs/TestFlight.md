@@ -15,6 +15,22 @@ die nur mit Apple-ID bzw. App-Store-Connect-Zugang möglich sind.
 - Die Build-Nummer setzt `scripts/testflight.sh` automatisch auf einen UTC-Zeitstempel,
   sie steigt also bei jedem Upload.
 
+## Neu in 1.0 (2611172329)
+
+- **Nativ auf dem iPad:** Bei breitem Fenster stehen die Synchronisierungen links und der
+  Editor rechts. Die Ansicht passt sich jeder Fenstergröße an, funktioniert in Split View
+  und Slide Over und bleibt beim Drehen bedienbar. In schmalen Fenstern und in Slide Over
+  wechselt die App in die einspaltige Ansicht, ohne ungefragt einen Editor zu öffnen.
+- **Tastatur:** ⌘N legt eine neue Synchronisierung an, ⌘R startet „Alle synchronisieren“.
+- **Auswahl:** Nach dem Sichern bleibt die Synchronisierung ausgewählt; „Abbrechen“ leert
+  die Auswahl.
+- **iPhone:** unverändert.
+- Build **1.0 (2611172329)** wurde am 18.11.2026 hochgeladen. Die Beta-Prüfung steht noch
+  aus; danach den Build für die Gruppe „Extern“ freigeben.
+- Die neuen iPad-Screenshots liegen unter `docs/app-store/screenshots/` (de/en, `ipad-13`).
+  Store-Texte, Screenshot-Slots und die restlichen Schritte stehen in
+  [AppStore.md](AppStore.md).
+
 ## Neu in 1.0 (2611022247)
 
 - **Neuer Zielkalender:** Im Editor unter „Nach“ › „Neuer Kalender …“ lässt sich direkt ein
@@ -31,7 +47,7 @@ die nur mit Apple-ID bzw. App-Store-Connect-Zugang möglich sind.
 
 ## Testgruppe
 
-Stand: 3. November 2026.
+Stand: 18. November 2026.
 
 | Name          | E-Mail                              | Gruppe                              |
 |---------------|-------------------------------------|-------------------------------------|
@@ -42,10 +58,14 @@ Stand: 3. November 2026.
 - Die interne Gruppe „Calsync“ wurde entfernt; „Test“ bleibt für Hakan.
 - Nina ist mit ihrer dienstlichen Adresse als externe Testerin in „Extern“ eingetragen;
   die private Adresse bleibt vorsichtshalber ebenfalls in der Gruppe.
+- Build **1.0 (2611172329)** ist der aktuelle Build: am 18.11.2026 hochgeladen,
+  Beta-Prüfung ausstehend, danach für „Extern“ freigeben.
 - Build **1.0 (2611022247)** wurde am 03.11.2026 hochgeladen, von der Beta-App-Prüfung
   freigegeben und für die Gruppe „Extern“ freigegeben. Status: **Testing**.
 - Build **1.0 (2610271745)** bleibt ebenfalls für „Extern“ verfügbar (Status: Testing).
 - Build **1.0 (2610251841)** bleibt ebenfalls für „Extern“ verfügbar (Status: Testing).
+- Vor dem externen Test muss die Datenschutzerklärung öffentlich erreichbar sein; der
+  Text liegt in [privacy.md](privacy.md), die URL wird in App Store Connect eingetragen.
 
 ### Stammdaten in App Store Connect
 
@@ -141,6 +161,8 @@ das Feld **App Name** ändern.
 > CalSync kopiert Termine aus einem oder mehreren Quellkalendern in einen Zielkalender,
 > zum Beispiel von Outlook nach iCloud. Bitte prüfe:
 >
+> **iPhone:**
+>
 > - Kalenderzugriff erlauben und eine Synchronisierung mit Quelle und Ziel anlegen.
 > - Einmal „Alle synchronisieren“ antippen: Werden Termine korrekt kopiert?
 > - Einen Termin in der Quelle ändern: Wird die Kopie beim nächsten Sync aktualisiert?
@@ -161,5 +183,18 @@ das Feld **App Name** ändern.
 > - Quelle oder Ziel ändern: Fragt CalSync, ob die alten Kopien entfernt werden sollen?
 > - „Kopierte Termine entfernen“ ausprobieren.
 > - Die App schließen und wieder öffnen: Läuft die Synchronisierung automatisch?
+>
+> **iPad:**
+>
+> - Die App auf dem iPad öffnen: Bei breitem Fenster steht links die Liste, rechts der
+>   Editor der ausgewählten Synchronisierung.
+> - Eine Synchronisierung auswählen, etwas ändern und sichern: Bleibt sie danach ausgewählt?
+> - „Abbrechen“: Wird die Auswahl geleert, ohne dass ein Editor als Sheet aufpoppt?
+> - Das Fenster verkleinern und Split View ausprobieren: Der Editor bleibt neben der Liste.
+>   In Slide Over wechselt die App in die einspaltige Ansicht; ein Wechsel der Größe öffnet
+>   keinen Editor ungefragt.
+> - Das iPad drehen (Hoch- und Querformat): Die Ansicht bleibt bedienbar.
+> - Mit Hardware-Tastatur ⌘N und ⌘R testen.
+> - Die Oberfläche auf Deutsch und auf Englisch prüfen.
 >
 > Rückmeldungen gern mit Screenshot und iOS-Version an hakan@erduman.de.

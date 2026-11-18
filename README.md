@@ -91,6 +91,9 @@ Config/Info.plist           Background task IDs, export-compliance flag
 Config/ExportOptions.plist  App Store Connect upload options
 scripts/testflight.sh       Archive + upload to TestFlight
 scripts/make-icon.swift     Regenerates the app icon
+scripts/screenshots.sh      Regenerates the App Store screenshots (Debug, demo data)
+docs/AppStore.md            Store metadata, screenshots and the remaining App Store Connect steps
+docs/privacy.md             Privacy policy in English and German
 ```
 
 ## Setup
@@ -160,6 +163,15 @@ CI has no signing certificate installed, so it relies on cloud-managed signing t
 xcodebuild test -project CalSync.xcodeproj -scheme CalSync \
   -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
+
+## App Store assets
+
+Screenshots live in `docs/app-store/screenshots` (German and English, iPhone 6.9" and
+iPad 13") and are regenerated with `./scripts/screenshots.sh`. The script builds a Debug
+app, seeds demo data only through the DEBUG-only `--seed-demo` flag and erases the two
+simulator devices it uses. Store metadata and the remaining App Store Connect steps are in
+[docs/AppStore.md](docs/AppStore.md); the privacy policy draft is in
+[docs/privacy.md](docs/privacy.md).
 
 ## Privacy
 

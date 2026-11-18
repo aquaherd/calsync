@@ -7,6 +7,9 @@ struct JobsView: View {
     @State private var editorJob: SyncJob?
     @State private var sheetJob: SyncJob?
     @State private var didAutoSelect = false
+    #if DEBUG
+    @State private var didOpenDemoJob = false
+    #endif
 
     // The iPad idiom check is required because a Pro Max iPhone in landscape is also `.regular` width.
     private var usesSplitLayout: Bool {
@@ -60,7 +63,35 @@ struct JobsView: View {
                 )
             )
         }
+        .onAppear {
+            #if DEBUG
+            openRequestedDemoJob()
+            #endif
+        }
     }
+
+    #if DEBUG
+    /// Opens a job from the editor launch flags used by the screenshot script.
+    private func openRequestedDemoJob() {
+        guard !didOpenDemoJob else { return }
+        let arguments = ProcessInfo.processInfo.arguments
+        let requestedJob: SyncJob?
+        if arguments.contains("--demo-open-editor") {
+            requestedJob = model.jobs.first
+        } else if arguments.contains("--demo-new-sync") {
+            requestedJob = SyncJob()
+        } else {
+            requestedJob = nil
+        }
+        guard let requestedJob else { return }
+        didOpenDemoJob = true
+        if usesSplitLayout {
+            editorJob = requestedJob
+        } else {
+            sheetJob = requestedJob
+        }
+    }
+    #endif
 
     private var splitLayout: some View {
         NavigationSplitView {

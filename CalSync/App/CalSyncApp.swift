@@ -6,6 +6,12 @@ struct CalSyncApp: App {
     @Environment(\.scenePhase) private var scenePhase
     private let model = AppModel.shared
 
+    init() {
+        #if DEBUG
+        DemoData.seed(into: model)
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
