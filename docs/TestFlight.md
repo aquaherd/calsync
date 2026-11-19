@@ -47,17 +47,17 @@ die nur mit Apple-ID bzw. App-Store-Connect-Zugang möglich sind.
 
 ## Testgruppe
 
-Stand: 18. November 2026.
+Stand: 19. November 2026.
 
-| Name          | E-Mail                              | Gruppe                              |
-|---------------|-------------------------------------|-------------------------------------|
-| Hakan Erduman | hakan@erduman.de                    | intern „Test“ (Build installiert)   |
-| Nina          | [redacted] | extern „Extern“ (Build freigegeben) |
-| Nina (privat) | [redacted]                     | extern „Extern“ (weiterhin eingeladen) |
+| Name          | Konto            | Gruppe                            |
+|---------------|------------------|-----------------------------------|
+| Hakan Erduman | hakan@erduman.de | intern „Test“ (Build installiert) |
+| Nina          | dienstlich       | extern „Extern“ (eingeladen)      |
+| Nina (privat) | privat           | extern „Extern“ (installiert)     |
 
 - Die interne Gruppe „Calsync“ wurde entfernt; „Test“ bleibt für Hakan.
-- Nina ist mit ihrer dienstlichen Adresse als externe Testerin in „Extern“ eingetragen;
-  die private Adresse bleibt vorsichtshalber ebenfalls in der Gruppe.
+- Nina ist mit ihrer dienstlichen Adresse als externe Testerin in „Extern“ eingeladen;
+  ihre private Adresse ist ebenfalls in der Gruppe und hat den Build installiert.
 - Build **1.0 (2611172329)** ist der aktuelle Build: am 18.11.2026 hochgeladen,
   Beta-Prüfung ausstehend, danach für „Extern“ freigeben.
 - Build **1.0 (2611022247)** wurde am 03.11.2026 hochgeladen, von der Beta-App-Prüfung

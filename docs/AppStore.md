@@ -234,8 +234,8 @@ CalSync is now native on iPad too: list and editor side by side, adapted to any 
 
 | Field | Value |
 |---|---|
-| Support URL | https://github.com/fhkf/calsync/issues |
-| Marketing URL | https://github.com/fhkf/calsync |
+| Support URL | https://github.com/aquaherd/calsync/issues |
+| Marketing URL | https://github.com/aquaherd/calsync |
 | Copyright | © 2026 Hakan Erduman |
 | Primary category | Productivity |
 | Age rating | 4+ |
@@ -254,7 +254,7 @@ The text is ready in [docs/privacy.md](privacy.md). There are two ways to publis
 
 1. **GitHub Pages, conditional example.** If Pages is enabled for this repository with
    *Deploy from a branch* → `main` → `/docs`, GitHub publishes `docs/privacy.md` as
-   `https://fhkf.github.io/calsync/privacy.html`. That URL is an example, not a promise:
+   `https://aquaherd.github.io/calsync/privacy.html`. That URL is an example, not a promise:
    check it in a private browser window before pasting it anywhere. Enabling Pages also
    publishes the other files in `docs/`, including this one.
 2. **The developer's own domain.** Host the same Markdown or a rendered HTML page at a

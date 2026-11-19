@@ -141,7 +141,7 @@ The build number defaults to a UTC timestamp, so it goes up with every upload. S
 
 Once App Store Connect finishes processing the build, it appears in TestFlight. Internal testers can install it right away. External testers need a short Beta App Review first.
 
-The testers are `hakan@erduman.de` and Nina at `[redacted]` (her older `[redacted]` remains in the group). See [docs/TestFlight.md](docs/TestFlight.md) for the German setup steps and a ready-to-paste "What to Test" text.
+The testers are `hakan@erduman.de` and Nina (work address); her older private address remains in the group. See [docs/TestFlight.md](docs/TestFlight.md) for the German setup steps and a ready-to-paste "What to Test" text.
 
 ### Upload from GitHub Actions
 
