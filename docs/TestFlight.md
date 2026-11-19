@@ -25,8 +25,8 @@ die nur mit Apple-ID bzw. App-Store-Connect-Zugang möglich sind.
 - **Auswahl:** Nach dem Sichern bleibt die Synchronisierung ausgewählt; „Abbrechen“ leert
   die Auswahl.
 - **iPhone:** unverändert.
-- Build **1.0 (2611172329)** wurde am 18.11.2026 hochgeladen. Die Beta-Prüfung steht noch
-  aus; danach den Build für die Gruppe „Extern“ freigeben.
+- Build **1.0 (2611172329)** wurde am 18.11.2026 hochgeladen. Am 19.11.2026 von der
+  Beta-App-Prüfung freigegeben und für die Gruppe „Extern“ freigegeben. Status: **Testing**.
 - Die neuen iPad-Screenshots liegen unter `docs/app-store/screenshots/` (de/en, `ipad-13`).
   Store-Texte, Screenshot-Slots und die restlichen Schritte stehen in
   [AppStore.md](AppStore.md).
@@ -58,14 +58,16 @@ Stand: 19. November 2026.
 - Die interne Gruppe „Calsync“ wurde entfernt; „Test“ bleibt für Hakan.
 - Nina ist mit ihrer dienstlichen Adresse als externe Testerin in „Extern“ eingeladen;
   ihre private Adresse ist ebenfalls in der Gruppe und hat den Build installiert.
-- Build **1.0 (2611172329)** ist der aktuelle Build: am 18.11.2026 hochgeladen,
-  Beta-Prüfung ausstehend, danach für „Extern“ freigeben.
+- Build **1.0 (2611172329)** ist der aktuelle Build: am 18.11.2026 hochgeladen, am
+  19.11.2026 von der Beta-App-Prüfung freigegeben und für die Gruppe „Extern“ freigegeben.
+  Status: **Testing**.
 - Build **1.0 (2611022247)** wurde am 03.11.2026 hochgeladen, von der Beta-App-Prüfung
   freigegeben und für die Gruppe „Extern“ freigegeben. Status: **Testing**.
 - Build **1.0 (2610271745)** bleibt ebenfalls für „Extern“ verfügbar (Status: Testing).
 - Build **1.0 (2610251841)** bleibt ebenfalls für „Extern“ verfügbar (Status: Testing).
-- Vor dem externen Test muss die Datenschutzerklärung öffentlich erreichbar sein; der
-  Text liegt in [privacy.md](privacy.md), die URL wird in App Store Connect eingetragen.
+- Die Datenschutzerklärung ist unter <https://aquaherd.github.io/calsync/privacy.html>
+  öffentlich erreichbar und in App Store Connect unter App-Informationen und
+  Testinformationen eingetragen.
 
 ### Stammdaten in App Store Connect
 

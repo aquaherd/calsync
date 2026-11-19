@@ -1,7 +1,7 @@
 # CalSync – App Store readiness
 
-Operational notes for shipping CalSync 1.0 on the App Store. Written 18 November 2026,
-after build **2611172329** was uploaded.
+Operational notes for shipping CalSync 1.0 on the App Store. Updated 19 November 2026,
+after build **2611172329** passed Beta App Review.
 
 Bundle ID `de.erduman.calsync`, team `UZZY9RR34A`, iOS 26 or later, iPhone and iPad.
 
@@ -9,9 +9,9 @@ Bundle ID `de.erduman.calsync`, team `UZZY9RR34A`, iOS 26 or later, iPhone and i
 
 ### Done in the repository
 
-- **Build 1.0 (2611172329)** was uploaded to App Store Connect on 18 November 2026 and is
-  processing. It adds native iPad support. The previous external build 1.0 (2611022247)
-  is still available to testers.
+- **Build 1.0 (2611172329)** was uploaded on 18 November 2026, passed Beta App Review on
+  19 November 2026 and is in external testing with the group **Extern**. It adds native
+  iPad support. The previous external build 1.0 (2611022247) is still available.
 - **iPad layout.** Two columns when the window is wide enough: syncs on the left, editor
   on the right. In narrow windows, Split View and Slide Over the app falls back to the
   single-column layout instead of presenting an editor unasked. ⌘N creates a sync, ⌘R runs
@@ -24,27 +24,21 @@ Bundle ID `de.erduman.calsync`, team `UZZY9RR34A`, iOS 26 or later, iPhone and i
 - **App icon** in `CalSync/Assets.xcassets/AppIcon.appiconset`.
 - **Encryption:** `ITSAppUsesNonExemptEncryption = NO` in the target build settings, so
   App Store Connect does not ask the export-compliance questions.
-- **Privacy policy draft:** [docs/privacy.md](privacy.md). It still needs a public URL;
-  see [Privacy policy URL](#privacy-policy-url).
+- **Privacy policy:** [docs/privacy.md](privacy.md), published at
+  <https://aquaherd.github.io/calsync/privacy.html>. The URL is set in App Information and
+  Test Information.
 
 ### Only in App Store Connect
 
-These steps need the account holder (or a team member with the matching role); no code
-change can do them:
+These steps remain (account holder or matching role; no code change can do them):
 
-- Make the privacy policy publicly reachable and paste its URL into the app record and
-  the TestFlight test information.
-- Add build 2611172329 to the external group **Extern** and submit it for Beta App Review.
-- Fill the Beta App Review contact details, including a phone number. Use the account
-  holder's number; do not put a placeholder in the review notes.
 - Create the 1.0 App Store version, paste the metadata below, upload the screenshots,
   attach the build and submit for App Review.
 - Accept any pending Apple Developer Program License Agreement.
 
-Already set in App Store Connect and unchanged by this document: category Productivity,
-age rating 4+, App Privacy “Data Not Collected”, content rights “no third-party content”,
-internal group **Test**, external group **Extern**, and build 2611022247 approved for
-external testing.
+Done in App Store Connect on 19 November 2026: the privacy policy URL is set in App
+Information and Test Information; the Beta App Review contact details are complete;
+build 2611172329 is in the external group **Extern** and approved for external testing.
 
 ## Screenshots
 
@@ -246,28 +240,14 @@ so the repository and its Issues tab have to stay public.
 
 ## Privacy policy URL
 
-**This is a blocker for external TestFlight and for App Store submission.** Apple requires
-a privacy policy that anyone can open without signing in. A link to a private repository
-file is not enough.
+The policy is published at <https://aquaherd.github.io/calsync/privacy.html> from this
+repository's `docs/` folder with GitHub Pages (**Deploy from a branch** → `main` → `/docs`).
+It opens without a login and is set in App Store Connect under **App Information** and
+TestFlight **Test Information**. The source text is [docs/privacy.md](privacy.md); keep
+the two in sync if the app changes.
 
-The text is ready in [docs/privacy.md](privacy.md). There are two ways to publish it:
-
-1. **GitHub Pages, conditional example.** If Pages is enabled for this repository with
-   *Deploy from a branch* → `main` → `/docs`, GitHub publishes `docs/privacy.md` as
-   `https://aquaherd.github.io/calsync/privacy.html`. That URL is an example, not a promise:
-   check it in a private browser window before pasting it anywhere. Enabling Pages also
-   publishes the other files in `docs/`, including this one.
-2. **The developer's own domain.** Host the same Markdown or a rendered HTML page at a
-   stable public URL there. Use this if Pages is not enabled or the GitHub URL does not
-   resolve.
-
-Paste the verified URL into:
-
-- App Store Connect › the app › **App Information** › **Privacy Policy URL**;
-- TestFlight › **Test Information** › **Privacy Policy URL**.
-
-External beta review and App Review both check that the page loads and matches the app.
-After the policy is live, the checklist item below can be ticked.
+The page renders both the English and the German policy. Enabling Pages also publishes the
+other files in `docs/`, including this one.
 
 ## App Review information
 
@@ -315,8 +295,9 @@ describes the same behaviour; keep the two in sync if the app changes.
 
 ## TestFlight external testing
 
-The external group is **Extern**. A new build for that group goes through Beta App Review
-first. Fill the test information below, then submit build 2611172329.
+The external group is **Extern**. Build 2611172329 was submitted for Beta App Review and
+approved on 19 November 2026; it is in external testing. The test information below is
+filled in.
 
 ### Beta App Description (DE)
 
@@ -370,7 +351,7 @@ Rückmeldungen gern mit Screenshot, Gerät, iOS-Version und Angabe, ob iPhone od
 | Beta App Description | German block above (primary), English block as the English localization |
 | What to Test | German block above |
 | Feedback email | hakan@erduman.de |
-| Privacy Policy URL | the public URL from [Privacy policy URL](#privacy-policy-url) — required before external testing |
+| Privacy Policy URL | https://aquaherd.github.io/calsync/privacy.html |
 | Contact first/last name | Hakan Erduman |
 | Contact email | hakan@erduman.de |
 | Contact phone | account holder only; do not invent one |
@@ -381,7 +362,8 @@ The German What-to-Test text above is also maintained in [TestFlight.md](TestFli
 
 Repository work:
 
-- [x] Build 2611172329 uploaded (18 November 2026) and processing.
+- [x] Build 2611172329 uploaded 18 November 2026; processed and approved for external
+      testing on 19 November 2026.
 - [x] German and English screenshots generated for iPhone 6.9" and iPad 13".
 - [x] Check all eight images (18 November 2026): the German set shows German UI, the
       English set shows English UI, both show 9:41 and a full battery, and none has an
@@ -391,17 +373,16 @@ Repository work:
 
 App Store Connect:
 
-- [ ] Publish the privacy policy (Pages or own domain), open it logged out, and paste the
-      URL into App Information and Test Information.
+- [x] Privacy policy published at <https://aquaherd.github.io/calsync/privacy.html> and
+      entered in App Information and Test Information.
 - [ ] Add the German screenshot set to the German localization: iPhone 6.9" first, then
       iPad 13", in file order.
 - [ ] Add the English screenshot set to the English localization in the same way.
-- [ ] Wait until 2611172329 finishes processing, then add it to the external group
-      **Extern**.
-- [ ] Fill the Beta App Review contact details, including the phone number, and submit the
-      build for Beta App Review.
-- [ ] After approval: install it through TestFlight on an iPhone and an iPad and walk
-      through the iPad checks above.
+- [x] Add build 2611172329 to the external group **Extern** on 19 November 2026.
+- [x] Beta App Review contact details filled in and the build submitted; approved on
+      19 November 2026.
+- [ ] Install it through TestFlight on an iPhone and an iPad and walk through the iPad
+      checks above.
 - [x] Export compliance: `ITSAppUsesNonExemptEncryption = NO` is already in the target
       build settings; if App Store Connect still shows a question, answer “No”.
 - [ ] Create the 1.0 App Store version, paste name, subtitle, promotional text,
@@ -410,8 +391,8 @@ App Store Connect:
 
 Already done in App Store Connect and not to be repeated: category Productivity, age
 rating 4+, App Privacy “Data Not Collected”, content rights with no third-party content,
-export compliance, internal group **Test**, external group **Extern**, build 2611022247
-approved for external testing.
+export compliance, internal group **Test**, external group **Extern**, builds 2611022247 and
+2611172329 approved for external testing.
 
 ## Not covered here
 
