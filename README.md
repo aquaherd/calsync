@@ -31,10 +31,9 @@ Mappings on disk contain only the destination identifier, the copied time range 
 
 ### Getting Outlook calendars onto the iPhone
 
-CalSync works through iOS's calendar database (EventKit), so the Outlook calendar has to appear in Apple's Calendar app. To set that up, either:
+CalSync works through iOS's calendar database (EventKit), so the Outlook calendar has to appear in Apple's Calendar app. Add the account under **Settings › Apps › Calendar › Calendar Accounts › Add Account › Microsoft Exchange / Outlook.com**.
 
-- add the account under **Settings › Apps › Calendar › Calendar Accounts › Add Account › Microsoft Exchange / Outlook.com**, or
-- in the Outlook iOS app, go to **Settings › your account › Sync Calendars** and turn it on.
+Installing the Outlook app alone is not enough: on iPhone it keeps its calendar in its own container, and Microsoft's **Sync Calendars** export to the native calendar is Android-only. If your organization publishes a calendar feed, you can subscribe to it under **Settings › Apps › Calendar › Calendar Accounts › Add Account › Other › Add Subscribed Calendar**; CalSync can read that calendar but not write to it.
 
 ## Shared calendars for two people
 

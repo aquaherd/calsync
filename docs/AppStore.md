@@ -336,7 +336,7 @@ CalSync copies events from one or more source calendars into a destination calen
 CalSync kopiert Termine aus einem oder mehreren Quellkalendern in einen Zielkalender, zum Beispiel von Outlook nach iCloud. Bitte prüfe:
 
 iPhone:
-- Kalenderzugriff erlauben und eine Synchronisierung mit Quelle und Ziel anlegen.
+- Kalenderzugriff erlauben; für Outlook das Konto unter Einstellungen › Apps › Kalender › Kalenderkonten hinzufügen (die Outlook-App allein reicht auf dem iPhone nicht). Danach eine Synchronisierung mit Quelle und Ziel anlegen.
 - Einmal „Alle synchronisieren“ antippen: Werden Termine korrekt kopiert?
 - Einen Termin in der Quelle ändern: Wird die Kopie beim nächsten Sync aktualisiert?
 - Einen Termin in der Quelle löschen: Verschwindet die Kopie?
